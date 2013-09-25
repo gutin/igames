@@ -64,5 +64,5 @@ int main(int ac_, char** av_)
 
   double value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, budget);
   std::cout << "Value is " << value << std::endl;
-  return 1;
+  return 0;
 }
