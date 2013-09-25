@@ -36,6 +36,8 @@ public:
 
   void store(size_t tau_, double val_);
   double value(size_t tau_) const;
+
+  void cleanup();
 private:
   void rank(const TaskSet&, const DirectedGraph&);
 };
@@ -45,6 +47,7 @@ class UDCLabelWriter;
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, UDC> UDCGraph;
 typedef boost::graph_traits<UDCGraph>::vertex_descriptor uvertex_t;
 typedef boost::graph_traits<UDCGraph>::vertex_iterator uvertex_i;
+typedef boost::graph_traits<UDCGraph>::out_edge_iterator u_oute_i;
 typedef std::vector<uvertex_i> UDCPtrs;
 
 class UDCNetwork

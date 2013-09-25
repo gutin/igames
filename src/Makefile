@@ -4,7 +4,7 @@ BOOST_LIB_LOCATION = /opt/local/lib
 CXX = g++
 INCLUDES = -I ${BOOST_HEADER_LOCATION} #-include ../install/*.d
 LINKS = -L${BOOST_LIB_LOCATION}
-CPPFLAGS = -MMD -g $(INCLUDES)
+CPPFLAGS = -MMD -O3 $(INCLUDES)
 
 BIN = ../install/main
 

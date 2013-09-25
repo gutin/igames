@@ -47,11 +47,6 @@ UDCNetwork::UDCNetwork(const Network& net_)
   DirectedGraph tcg;
   boost::transitive_closure(net_.graph(), tcg);
 
-  std::ofstream out("tc-in.dot");
-  write_graphviz(out, net_.graph(), make_label_writer("eligutinreginald"));
-  std::ofstream out2("tc-out.dot");
-  write_graphviz(out2, tcg, make_label_writer("eligutinreginald"));
-  
   TaskSets udcs;
   findUDCs(tcg, udcs);
   cout << "Generated " << udcs.size() << " cuts" << endl;    
@@ -83,8 +78,6 @@ UDCNetwork::UDCNetwork(const Network& net_)
       }
     }
   }
-  std::ofstream out3("unetout-out.dot");
-  write_graphviz(out3, _ug, UDCLabelWriter(*this, net_));
   cout << "Constructed UDC network" << endl;
 }
 
@@ -301,6 +294,16 @@ double UDC::value(size_t tav_) const
     return 0;
   }
   return _v[std::distance(_indexes.begin(), indexIter)];
+}
+
+void UDC::cleanup()
+{
+  _tasks.clear();
+  _taskSet.clear();
+  _finished.clear();
+  _indexes.clear();
+  _v.clear();
+  _activity2UDCIndex.clear();
 }
 
 }}

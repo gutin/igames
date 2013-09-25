@@ -102,6 +102,19 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
     std::cout << "UDC[" << *uPtr << "] [" << (++udcCount) << "/" << numUDCs << "]" << std::endl;
     int states = solveUDC(uPtr, unet, net_, budget_, storagePolicy_);
     std::cout << "Solved UDC. Total of " << states << std::endl;
+
+    u_oute_i oe, oe_end;
+    boost::tie(oe, oe_end) = boost::out_edges(*uPtr, unet._ug);
+    for(; oe != oe_end; ++oe)
+    {
+      uvertex_t outUDC = boost::target(*oe, unet._ug);
+      size_t& dependCount = unet[outUDC]._dependCount;
+      if(--dependCount == 0)
+      {
+        std::cout << "\t --- Cleaning up UDC " << outUDC << std::endl;
+        unet[outUDC].cleanup();
+      }
+    }
   }
   std::cout << "Solving final UDC - the start one " << std::endl; 
   uvertex_i startUdc = uPtrs[numUDCs-1];
