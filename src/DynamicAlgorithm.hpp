@@ -260,8 +260,8 @@ int DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
 
         udc.store(tau, maxVal);
         storagePolicy_(s, bestAction);
-        std::cout << "optimal action in state " << s.asString() << " is " << net_.asString(bestAction ? *bestAction : OrderedTaskSet()) 
-          << " and value is " << maxVal << " and tau = " << tau << std::endl;  
+        //std::cout << "optimal action in state " << s.asString() << " is " << net_.asString(bestAction ? *bestAction : OrderedTaskSet()) 
+        //  << " and value is " << maxVal << " and tau = " << tau << std::endl;  
       }
     }
   }

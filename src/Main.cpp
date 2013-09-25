@@ -63,6 +63,6 @@ int main(int ac_, char** av_)
   n.import(filesstr.str());
 
   double value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, budget);
-  std::cout << "Value is " << value << std::endl;
+  std::cout << value << std::endl;
   return 0;
 }

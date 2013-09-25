@@ -84,10 +84,8 @@ bool Network::import(const std::string& file_)
       if(iss >> duration)
       {
         Task t((1/duration), (1/(2*duration)), activityName);
-        t._nu = (1/duration);
         last = add(t);
-        std::cout << "Adding task with rate/duration " << (1/duration) << "/" << t._nu << " = " << _g[last].nu() << " = " 
-                  << _g[last].index() << std::endl;
+        std::cout << "Adding task [" << last << "] with duration [" << duration << "]" << std::endl;
         if(count == 4) _start = last;
         ++activityName;
       }
