@@ -16,7 +16,7 @@ public:
   double orderStrength() const;
   const DirectedGraph& graph() const { return _g; }
 
-  bool import(const std::string& file_);
+  bool import(const std::string& file_, bool delaysFromFile_ = false);
 
   vertex_t start() const;
   vertex_t end() const;

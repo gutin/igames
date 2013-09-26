@@ -68,7 +68,7 @@ Network::Network()
 {
 }
 
-bool Network::import(const std::string& file_)
+bool Network::import(const std::string& file_, bool delaysFromFile_)
 {
   std::ifstream ifs(file_.c_str(), std::ifstream::in);
   std::string line;
@@ -83,9 +83,25 @@ bool Network::import(const std::string& file_)
       std::istringstream iss(line);
       if(iss >> duration)
       {
-        Task t((1/duration), (1/(2*duration)), activityName);
+        double delayedDuration = 0;
+        if(delaysFromFile_)
+        {
+          if(!(iss >> delayedDuration) || delayedDuration < duration)
+          {
+            std::cerr << "Supposed to use delayed duration from file but the data is incorrect" << std::endl;
+            std::cerr << "Normal = " << duration << "; delayed = " << delayedDuration << std::endl;
+            return false;
+          }
+        }
+        else
+        {
+          // if we dont take from the file the default is to double the delayedDuration
+          delayedDuration = 2*duration;
+        }
+        Task t((1/duration), (1/delayedDuration), activityName);
         last = add(t);
-        std::cout << "Adding task [" << last << "] with duration [" << duration << "]" << std::endl;
+        std::cout << "Adding task [" << last << "] with duration [" << duration << "]"
+                  << " delayedDuration [" << delayedDuration << "]" << std::endl;
         if(count == 4) _start = last;
         ++activityName;
       }
