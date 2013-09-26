@@ -22,7 +22,7 @@ public:
   BigInt _taskBVec;
   size_t _dependCount;
 
-  UDC() : _taskBVec(0), _dependCount(0) {} 
+  UDC() : _dependCount(0) {} 
    
   void init(const TaskSet&, const DirectedGraph&);
   size_t rank() const { return _finished.size(); }

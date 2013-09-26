@@ -48,8 +48,8 @@ void Network::initSecondary()
     for(; ei != ei_end; ++ei)
     {
       vertex_t pred = boost::source(*ei, _g);
-      _successorbs[pred] |= (1 << *vi);
-      _predbs[*vi] |= (1 << pred);
+      _successorbs[pred].set(*vi);
+      _predbs[*vi].set(pred);
     }
   }
 }

@@ -90,7 +90,7 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
 {
   UDCNetwork unet(net_);
   size_t numUDCs = unet.size();
-  size_t udcCount = 0;
+  size_t udcCount = 0, totalStates = 0;
   boost::progress_timer ptimer;
   
   UDCPtrs uPtrs;
@@ -102,6 +102,7 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
     std::cout << "UDC[" << *uPtr << "] [" << (++udcCount) << "/" << numUDCs << "]" << std::endl;
     int states = solveUDC(uPtr, unet, net_, budget_, storagePolicy_);
     std::cout << "Solved UDC. Total of " << states << std::endl;
+    totalStates += states;
 
     u_oute_i oe, oe_end;
     boost::tie(oe, oe_end) = boost::out_edges(*uPtr, unet._ug);
@@ -120,6 +121,8 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
   uvertex_i startUdc = uPtrs[numUDCs-1];
   int states = solveUDC(startUdc, unet, net_, budget_, storagePolicy_);
   std::cout << "Last one had " << states << " states" << std::endl;
+  totalStates += states;
+  std::cout << "In total there were " << totalStates << " states" << std::endl;
   State startingState;
   util::startingState(net_, budget_, startingState);
   return unet[*startUdc].value(tau(*startUdc, unet, startingState, budget_));
@@ -341,27 +344,27 @@ StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
     if((1 << i) & udcCompCode)
     {
       eligible |= net_._successorbs[t];
-      allFinished |= (1 << t);
+      allFinished.set(t);
     }
-    relevant |= (1 << t);
+    relevant.set(t);
   }
 
   BOOST_FOREACH(vertex_t finishedT, udc_._finished)
   {
-    allFinished |= (1 << finishedT);
+    allFinished.set(finishedT);
   }
 
   vertex_i vi, vi_end;
   boost::tie(vi, vi_end) = boost::vertices(net_.graph());
   for(; vi != vi_end; ++vi)
   {
-    if((1 << *vi) & eligible)
+    if(eligible[*vi])
     {
       BigInt predBs = net_._predbs[*vi];
       BigInt tmp = predBs & allFinished;
       if(tmp == predBs)
       {
-        relevant |= (1 << *vi);
+        relevant.set(*vi);
         relevant &= ~predBs;
       }
     }
@@ -401,7 +404,7 @@ StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
   for(size_t i = 0; i < nextUDCTasks.size(); ++i)
   {
     vertex_t nt = nextUDCTasks[i];
-    if((1 << nt) & allFinished)
+    if(allFinished[nt])
     {
       nextFinishCode |= (1 << i);
     }

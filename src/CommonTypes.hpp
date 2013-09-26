@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <vector>
+#include <bitset>
 
 namespace ig { namespace core {
   class State;
@@ -25,7 +26,7 @@ namespace ig { namespace core {
   typedef boost::graph_traits<DirectedGraph>::out_edge_iterator oute_i;
   typedef boost::graph_traits<DirectedGraph>::in_edge_iterator ine_i;
 
-  typedef long BigInt;
+  typedef std::bitset<128> BigInt;
 
   typedef boost::unordered_set<vertex_t> TaskSet;
   typedef std::set<vertex_t> OrderedTaskSet;

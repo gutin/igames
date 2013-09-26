@@ -172,7 +172,7 @@ void UDC::init(const TaskSet& tasks_, const DirectedGraph& tcg_)
   {
     _activity2UDCIndex[t] = 
       std::distance(_tasks.begin(), std::find(_tasks.begin(), _tasks.end(), t));
-    _taskBVec |= (1 << t); 
+    _taskBVec.set(t);
   }
   rank(tasks_, tcg_);
 }
