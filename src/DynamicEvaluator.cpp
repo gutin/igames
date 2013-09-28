@@ -34,14 +34,7 @@ DynamicEvaluatorT<Evaluator>::evaluateInState(const Network& net_,
     return it->second;
   }
   const State& state = *statePtr_;
-  typename Policy::const_iterator a_it = policy_.find(state);
-  if(a_it == policy_.end())
-  {
-    std::cerr << "Warning failed to find action in state " << statePtr_->asString() << std::endl;
-    return 0;
-  }
-//  std::cout << "Found the action in state " << statePtr_->asString() << std::endl;
-  const ActionSharedPtr actionPtr = a_it->second;
+  ActionSharedPtr actionPtr = policy_.at(state);
   OrderedTaskSet victims;
   std::set_union(actionPtr->begin(), actionPtr->end(),
                  statePtr_->_interdicted.begin(), statePtr_->_interdicted.end(),
