@@ -38,4 +38,12 @@ bool State::operator==(const State& other_) const
         && _dormant == other_._dormant && _res == other_._res;
 }
 
+void State::addInterdictedSet(const OrderedTaskSet& interdicted_)
+{
+  BOOST_FOREACH(vertex_t u, interdicted_)
+  {
+    _interdicted.insert(u);
+  }
+}
+
 }}

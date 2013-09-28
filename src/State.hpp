@@ -20,7 +20,11 @@ struct State
   explicit State(size_t res_ = 0) : _res(res_) {}
 
   std::string asString() const;
+
+  void addInterdictedSet(const OrderedTaskSet& interdicted_);
 };
+
+typedef boost::shared_ptr<State> StateSharedPtr;
 
 struct StateHash : std::unary_function<State, size_t>
 {
@@ -33,6 +37,14 @@ struct StateHash : std::unary_function<State, size_t>
     h = h*prime + TaskSetHash<OrderedTaskSet>()(state_._dormant);
     h = h*prime + state_._res;
     return h;
+  }
+};
+
+struct StateSharedPtrHash : std::unary_function<StateSharedPtr, size_t>
+{
+  size_t operator() (const StateSharedPtr& statePtr_) const 
+  {
+    return StateHash()(*statePtr_);
   }
 };
 

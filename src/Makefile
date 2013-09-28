@@ -12,7 +12,8 @@ SRCS = Network.cpp \
        Task.cpp \
        Main.cpp \
        UDCNetwork.cpp \
-       State.cpp
+       State.cpp \
+       Utils.cpp
 
 OBJS=$(patsubst %.cpp,../install/%.o,$(SRCS))
 

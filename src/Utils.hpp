@@ -54,6 +54,12 @@ inline void startingState(const Network& net_, size_t budget_, State& startingSt
   startingState._res = budget_;
 }
 
+StateSharedPtr nextState(const Network& net_,
+          const StateSharedPtr& statePtr_,
+          const ActionSharedPtr& actionPtr_,
+          const OrderedTaskSet& finished_,
+          vertex_t u_);
+
 }}}
 
 #endif
