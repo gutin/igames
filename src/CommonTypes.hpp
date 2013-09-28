@@ -3,11 +3,18 @@
 
 #include "Task.hpp"
 
+#include <boost/version.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
+#if (BOOST_VERSION >= 104900)
+#warning "Using a bizarre workaround for transitive closure. \
+http://boost.2283326.n4.nabble.com/Problem-in-using-Transitive-closure-on-Linux-td2573042.html"
+#include <boost/graph/vector_as_graph.hpp>
+#endif
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_iterator.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/graph/graph_archetypes.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
