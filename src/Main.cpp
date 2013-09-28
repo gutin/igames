@@ -3,7 +3,7 @@
 
 #include "Task.hpp"
 #include "DynamicAlgorithm.hpp"
-
+#include "DynamicEvaluator.hpp"
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
 
@@ -88,6 +88,8 @@ int main(int ac_, char** av_)
     return 1;
   }
   n.import(rcpFile, delayFromFile);
+  std::cout << "There are " << boost::num_edges(n.graph()) << " edges" << std::endl;
+  std::cout << "There are " << boost::num_vertices(n.graph()) << " vertices" << std::endl;
 
   double value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, budget);
   std::cout << value << std::endl;
