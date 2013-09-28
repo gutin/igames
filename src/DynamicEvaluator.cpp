@@ -7,7 +7,7 @@ template <class Policy>
 double 
 DynamicEvaluatorT<Evaluator>::evaluate(const Network& net_, 
                                        size_t budget_,
-                                       const Policy& policy_) 
+                                       const Policy& policy_) const
 {
   StateSharedPtr sptr(new State);
   util::startingState(net_, budget_, *sptr);
@@ -22,7 +22,7 @@ double
 DynamicEvaluatorT<Evaluator>::evaluateInState(const Network& net_, 
                                               const Policy& policy_,
                                               const StateSharedPtr& statePtr_,
-                                              const OrderedTaskSet& finished_) 
+                                              const OrderedTaskSet& finished_) const
 {
   if(util::isTerminalState(net_, *statePtr_))
   {
@@ -60,7 +60,7 @@ StandardDynamicEvaluator::evaluateInStateImpl(const Network& net_,
                                               const ActionSharedPtr& actionPtr_,
                                               const OrderedTaskSet& victims_,
                                               const Policy& policy_,
-                                              const OrderedTaskSet& finished_) 
+                                              const OrderedTaskSet& finished_) const 
 {
   double secondTerm = 0, totalRate = 0;
   BOOST_FOREACH(vertex_t u, statePtr_->_active)
