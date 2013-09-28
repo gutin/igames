@@ -60,6 +60,13 @@ StateSharedPtr nextState(const Network& net_,
           const OrderedTaskSet& finished_,
           vertex_t u_);
 
+inline bool isTerminalState(const Network net_, const State& state_)
+{
+  vertex_t e = net_.end();
+  return state_._active.find(e) != state_._active.end() ||
+         state_._interdicted.find(e) != state_._interdicted.end();
+}
+
 }}}
 
 #endif

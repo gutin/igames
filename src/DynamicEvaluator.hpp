@@ -13,7 +13,7 @@ class DynamicEvaluatorT
 {
 public:
   template <class Policy>
-  double evaluate(const Network& net_, size_t budget_, const Policy& policy_) const;
+  double evaluate(const Network& net_, size_t budget_, const Policy& policy_);
 protected:
   typedef boost::unordered_map<StateSharedPtr, double, StateSharedPtrHash> ValueCache;
 
@@ -21,7 +21,7 @@ protected:
   double evaluateInState(const Network& net_, 
                          const Policy& policy_,
                          const StateSharedPtr& statePtr_,
-                         const OrderedTaskSet& finished_) const;
+                         const OrderedTaskSet& finished_);
   ValueCache _vcache;
 };
 
@@ -34,7 +34,7 @@ public:
                              const ActionSharedPtr& actionPtr_,
                              const OrderedTaskSet& vicitms_,
                              const Policy& policy_,
-                             const OrderedTaskSet& finished_) const;
+                             const OrderedTaskSet& finished_);
 };
 
 

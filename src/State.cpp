@@ -46,4 +46,12 @@ void State::addInterdictedSet(const OrderedTaskSet& interdicted_)
   }
 }
 
+void State::removeDormantSet(const Network& net_, ine_i begin_, ine_i end_)
+{
+  for(;begin_ != end_; ++begin_)
+  {
+    _dormant.erase(boost::source(*begin_, net_.graph()));
+  }
+}
+
 }}

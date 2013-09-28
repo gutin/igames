@@ -1,7 +1,7 @@
 #ifndef COMMONTYPES_H
 #define COMMONTYPES_H
 
-#include "Task.hpp"
+#include <Task.hpp>
 
 #include <boost/version.hpp>
 #include <boost/unordered_set.hpp>

@@ -28,13 +28,14 @@ nextState(const Network& net_,
   {
     vertex_t successor = boost::target(*ei, net_.graph());
     
-    ine_i pei, pei_end;
-    boost::tie(pei, pei_end) = boost::in_edges(u_, net_.graph());
-    
+    ine_i pei, pei_end, pei_tmp;
+    boost::tie(pei, pei_end) = boost::in_edges(successor, net_.graph());
+    pei_tmp = pei;
+
     bool containsAll = true;
     for(;pei != pei_end; ++pei)
     {
-      vertex_t pred = boost::target(*pei, net_.graph());
+      vertex_t pred = boost::source(*pei, net_.graph());
       if(completed.find(pred) == completed.end())
       {
         containsAll = false;
@@ -43,8 +44,12 @@ nextState(const Network& net_,
     }
     if(containsAll)
     {
-      ret->_active.insert(successor);
-      ret->_dormant.erase(successor);
+      std::pair<OrderedTaskSet::iterator, bool> result = ret->_active.insert(successor);
+      if(!result.second)
+      {
+        std::cerr << "Failed for some weird reason to insert an element!!" << std::endl;
+      }
+      ret->removeDormantSet(net_, pei_tmp, pei_end);
     }
   }
   return ret;

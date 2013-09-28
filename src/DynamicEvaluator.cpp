@@ -7,11 +7,11 @@ template <class Policy>
 double 
 DynamicEvaluatorT<Evaluator>::evaluate(const Network& net_, 
                                        size_t budget_,
-                                       const Policy& policy_) const
+                                       const Policy& policy_) 
 {
   StateSharedPtr sptr(new State);
   util::startingState(net_, budget_, *sptr);
-  double ret = evaluateInState(net_, budget_, sptr, TaskSet());
+  double ret = evaluateInState(net_, policy_, sptr, OrderedTaskSet());
   _vcache.clear();
   return ret;
 }
@@ -22,16 +22,26 @@ double
 DynamicEvaluatorT<Evaluator>::evaluateInState(const Network& net_, 
                                               const Policy& policy_,
                                               const StateSharedPtr& statePtr_,
-                                              const OrderedTaskSet& finished_) const
+                                              const OrderedTaskSet& finished_) 
 {
+  if(util::isTerminalState(net_, *statePtr_))
+  {
+    return 0;
+  }
   ValueCache::iterator it;
   if((it = _vcache.find(statePtr_)) != _vcache.end())
   {
-    return *it;
+    return it->second;
   }
   const State& state = *statePtr_;
-  ActionSharedPtr actionPtr = policy_[state];
-  
+  typename Policy::const_iterator a_it = policy_.find(state);
+  if(a_it == policy_.end())
+  {
+    std::cerr << "Warning failed to find action in state " << statePtr_->asString() << std::endl;
+    return 0;
+  }
+//  std::cout << "Found the action in state " << statePtr_->asString() << std::endl;
+  const ActionSharedPtr actionPtr = a_it->second;
   OrderedTaskSet victims;
   std::set_union(actionPtr->begin(), actionPtr->end(),
                  statePtr_->_interdicted.begin(), statePtr_->_interdicted.end(),
@@ -39,6 +49,7 @@ DynamicEvaluatorT<Evaluator>::evaluateInState(const Network& net_,
   return _vcache[statePtr_] = 
     (static_cast<const Evaluator*>(this))->evaluateInStateImpl(net_, statePtr_,
                                                                actionPtr, victims,
+                                                               policy_,
                                                                finished_);
 }
 
@@ -49,7 +60,7 @@ StandardDynamicEvaluator::evaluateInStateImpl(const Network& net_,
                                               const ActionSharedPtr& actionPtr_,
                                               const OrderedTaskSet& victims_,
                                               const Policy& policy_,
-                                              const OrderedTaskSet& finished_) const
+                                              const OrderedTaskSet& finished_) 
 {
   double secondTerm = 0, totalRate = 0;
   BOOST_FOREACH(vertex_t u, statePtr_->_active)
@@ -61,7 +72,7 @@ StandardDynamicEvaluator::evaluateInStateImpl(const Network& net_,
     double rate = victims_.find(u) != victims_.end() ? net_.graph()[u]._delta
                                                      : net_.graph()[u]._nu;
     totalRate += rate;
-    secondTerm += rate * evaluateInState(net_, policy_, statePtr_, newFinished);
+    secondTerm += rate * evaluateInState(net_, policy_, nextStatePtr, newFinished);
   }
   return (1 + secondTerm) / totalRate;
 }

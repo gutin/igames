@@ -4,6 +4,7 @@
 #include "CommonTypes.hpp"
 #include <string>
 #include <sstream>
+#include <Network.hpp>
 
 namespace ig { namespace core {
 
@@ -22,6 +23,7 @@ struct State
   std::string asString() const;
 
   void addInterdictedSet(const OrderedTaskSet& interdicted_);
+  void removeDormantSet(const Network& net_, ine_i begin_, ine_i end_);
 };
 
 typedef boost::shared_ptr<State> StateSharedPtr;

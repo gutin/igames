@@ -70,8 +70,7 @@ template <class SE>
 void DynamicAlgorithm<SE>::optimalPolicyAndValue(const Network& network_, size_t budget_,
                 DynamicPolicy& optimalPolicy_, double& optimalValue_) 
 {
-  DynamicPolicy dp;
-  DecisionStorageInMemory dsm(dp);
+  DecisionStorageInMemory dsm(optimalPolicy_);
   optimalValue_ = execute(network_, budget_, dsm);
 }
 

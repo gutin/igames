@@ -155,4 +155,10 @@ vertex_i Network::findFromIndex(int i_) const
   return vi_end;
 }
 
+double Network::orderStrength() const
+{
+  //TODO: implement this
+  return 0.8;
+}
+
 }}
