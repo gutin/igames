@@ -10,15 +10,13 @@
 
 namespace ig { namespace core {
 
-class StaticPolicy
+struct StaticPolicy
 {
-public:
   ActionSharedPtr at(const State&) const;
 
   StaticPolicy& operator<<(vertex_t u);
 
   std::string asString() const;
-private:
   // the static interdiction pattern 'theta'
   OrderedTaskSet _targets;
 };

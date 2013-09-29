@@ -31,7 +31,7 @@ HEURISTIC_LIB_NAME = ../install/higames.a
 BIN = ../install/main
 TEST_BIN = ../install/unit-tests
 #TODO: add this later
-#HEURISTICS_BIN = ../install/heuristic
+HEURISTICS_BIN = ../install/heuristic
 
 LIB_SRCS = Network.cpp \
           Task.cpp \
@@ -53,15 +53,16 @@ HEURISTIC_LIB_HEADERS = StaticAlgorithms.hpp \
 							          DynamicEvaluator.cpp
 
 BIN_SRCS = Main.cpp
-
+HBIN_SRCS = HeuristicMain.cpp
 TEST_SRCS = test/test.cpp
 
 LIB_OBJS=$(patsubst %.cpp,../install/%.o,$(LIB_SRCS))
 BIN_OBJS=$(patsubst %.cpp,../install/%.o,$(BIN_SRCS))
 TEST_OBJS=$(patsubst %.cpp,../install/%.o,$(TEST_SRCS))
 HEURISTIC_OBJS=$(patsubst %.cpp,../install/%.o,$(HEURISTIC_LIB_SRCS))
+HBIN_OBJS=$(patsubst %.cpp,../install/%.o,$(HBIN_SRCS))
 
-all : headers install test run_test
+all : headers install hinstall test run_test
 
 run_test :
 	../install/$(TEST_BIN)
@@ -84,6 +85,9 @@ heuristics_lib : library $(HEURISTIC_OBJS)
 
 test : library heuristics_lib $(TEST_OBJS) $(LIB_NAME) $(HEURISTIC_LIB_NAME)
 	$(CXX) $(TEST_OBJS) $(LIB_NAME) $(HEURISTIC_LIB_NAME) $(HEURISTIC_LFLAGS) -o $(TEST_BIN) 
+
+hinstall : heuristics_lib $(HBIN_OBJS) $(HEURISTIC_LIB_NAME) $(LIB_NAME)
+	 $(CXX) $(LFLAGS) $(HBIN_OBJS) $(LIB_NAME) $(HEURISTIC_LIB_NAME) $(HEURISTIC_LFLAGS) -o $(HEURISTICS_BIN) 
 
 ../install/%.o: %.cpp 
 	$(CXX) $(CPPFLAGS) -c $< -o ../install/$(subst .cpp,.o,$<)
