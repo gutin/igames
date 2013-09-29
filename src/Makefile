@@ -2,11 +2,14 @@ BOOST_HEADER_LOCATION = /opt/local/include
 BOOST_LIB_LOCATION = /opt/local/lib
 CORE_LIBS = /usr/lib
 
-CPLEX_PATH = /Users/gutin/Applications/IBM/ILOG/CPLEX_Studio_Academic123
-CPLEX_LIBS = $(CPLEX_PATH)/cplex/lib/x86-64_darwin9_gcc4.0/static_pic
-CPLEX_HEADERS =  $(CPLEX_PATH)/cplex/include
-CONCERT_LIBS = $(CPLEX_PATH)/concert/lib/x86-64_darwin9_gcc4.0/static_pic
-CONCERT_HEADERS = $(CPLEX_PATH)/concert/include
+SYSTEM = x86-64_darwin9_gcc4.0
+CPLEX_BASE_PATH = /Users/gutin/Applications/IBM/ILOG/CPLEX_Studio_Academic123
+CPLEX_PATH= $(CPLEX_BASE_PATH)/cplex
+CONCERT_PATH = $(CPLEX_BASE_PATH)/concert
+CPLEX_LIBS = $(CPLEX_PATH)/lib/$(SYSTEM)/static_pic
+CPLEX_HEADERS =  $(CPLEX_PATH)/include
+CONCERT_LIBS = $(CONCERT_PATH)/lib/$(SYSTEM)/static_pic
+CONCERT_HEADERS = $(CONCERT_PATH)/include
 
 VERSION=RELEASE
 
@@ -18,10 +21,10 @@ endif
 
 CXX = g++
 INCLUDES = -I ${BOOST_HEADER_LOCATION} -I $(CPLEX_HEADERS) -I $(CONCERT_HEADERS) -I../install/include #-include ../install/*.d
-LINKS = -L${BOOST_LIB_LOCATION} -L$(CPLEX_LIBS) -L$(CONCERT_LIBS) -L$(CORE_LIBS)
+LINKS = -L${BOOST_LIB_LOCATION}  -L$(CORE_LIBS)
 CPPFLAGS = -MMD $(OPT_LEVEL) $(INCLUDES) -DIL_STD
 LFLAGS = $(OPT_LEVEL) -lboost_program_options $(LINKS)
-HEURISTIC_LFLAGS = $(LFLAGS) -framework CoreFoundation -framework IOKit -lilocplex -lconcert -lcplex -lm -lpthread
+HEURISTIC_LFLAGS = -framework CoreFoundation -framework IOKit -L$(CPLEX_LIBS) -lilocplex -lcplex -L$(CONCERT_LIBS) -lconcert -lm -lpthread
 
 LIB_NAME = ../install/igames.a
 HEURISTIC_LIB_NAME = ../install/higames.a
@@ -80,7 +83,7 @@ heuristics_lib : library $(HEURISTIC_OBJS)
 	ar -cvq $(HEURISTIC_LIB_NAME) $(HEURISTIC_OBJS) $(LIB_NAME)
 
 test : library heuristics_lib $(TEST_OBJS) $(LIB_NAME) $(HEURISTIC_LIB_NAME)
-	$(CXX) $(HEURISTIC_LFLAGS) $(TEST_OBJS) $(LIB_NAME) $(HEURISTIC_LIB_NAME) -o $(TEST_BIN) 
+	$(CXX) $(TEST_OBJS) $(LIB_NAME) $(HEURISTIC_LIB_NAME) $(HEURISTIC_LFLAGS) -o $(TEST_BIN) 
 
 ../install/%.o: %.cpp 
 	$(CXX) $(CPPFLAGS) -c $< -o ../install/$(subst .cpp,.o,$<)
