@@ -6,9 +6,11 @@
 #include <UDCNetwork.hpp>
 #include <DynamicAlgorithm.hpp>
 #include <DynamicEvaluator.hpp>
+#include <StaticAlgorithms.hpp>
 
 using namespace ig::core;
 
+// Testing the dynamic stochastic algorithm
 BOOST_AUTO_TEST_SUITE( standardAlgorithm )
 
   // Make sure the optimal value and the value of 
@@ -36,3 +38,21 @@ BOOST_AUTO_TEST_SUITE( standardAlgorithm )
   }
 BOOST_AUTO_TEST_SUITE_END()
   
+// Testing the static stochastic algorthm
+BOOST_AUTO_TEST_SUITE( staticStochasticAlgorithm )
+
+  // Make sure the optimal value and the value of 
+  // the optimal policy worked out are equal
+  BOOST_AUTO_TEST_CASE( objectValueOfMILPMustMatchEvaluatedOne )
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.8/Pat12.rcp");
+    
+    StaticPolicy staticPolicy;
+    double expectedValue = staticStochasticPolicy(n, B, staticPolicy);
+
+    BOOST_CHECK_CLOSE(expectedValue, StandardDynamicEvaluator().evaluate(n, B, staticPolicy), 1e-05);
+  }
+
+BOOST_AUTO_TEST_SUITE_END()

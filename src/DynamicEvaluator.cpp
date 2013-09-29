@@ -61,7 +61,7 @@ StandardDynamicEvaluator::evaluateInStateImpl(const Network& net_,
     OrderedTaskSet newFinished = finished_;
     newFinished.insert(u);
 
-    StateSharedPtr nextStatePtr = util::nextState(net_, statePtr_, actionPtr_, newFinished, u);
+    StateSharedPtr nextStatePtr = util::nextState(net_, *statePtr_, actionPtr_, newFinished, u);
     double rate = victims_.find(u) != victims_.end() ? net_.graph()[u]._delta
                                                      : net_.graph()[u]._nu;
     totalRate += rate;

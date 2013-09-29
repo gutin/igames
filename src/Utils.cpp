@@ -4,12 +4,12 @@ namespace ig { namespace core { namespace util {
 
 StateSharedPtr 
 nextState(const Network& net_,
-          const StateSharedPtr& statePtr_,
+          const State& state_,
           const ActionSharedPtr& actionPtr_,
           const OrderedTaskSet& finished_,
           vertex_t u_)
 {
-  StateSharedPtr ret(new State(*statePtr_));
+  StateSharedPtr ret(new State(state_));
   ret->addInterdictedSet(*actionPtr_);
   ret->_active.erase(u_);
   ret->_interdicted.erase(u_);

@@ -22,6 +22,7 @@ public:
   vertex_t end() const;
 
   bool isStart(vertex_t v_) const { return _start == v_; }
+  bool isEnd(vertex_t v_) const { return _end == v_; }
 
   template <class TaskCollection>
   std::string asString(const TaskCollection& ts_) const

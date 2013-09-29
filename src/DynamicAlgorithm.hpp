@@ -39,10 +39,11 @@ public:
   static void optimalPolicyAndValue(const Network& network_, size_t budget_,
                 DynamicPolicy& optimalPolicy_, double& optimalValue_);
   static double optimalValue(const Network& network_, size_t budget_);
-private:
+  
   template<class DecisionStoragePolicy>
   static double execute(const Network&,size_t,DecisionStoragePolicy&);
 
+private:
   template<class DecisionStoragePolicy>
   static int solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&);
 
@@ -316,6 +317,7 @@ size_t DynamicAlgorithm<SE>::tau(uvertex_t udc_,
   return result;
 }
 
+inline
 StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
                             StateTemplateMap& stmap_, const Network& net_,
                             const UDCNetwork& unet_, int fcode_)
@@ -410,6 +412,7 @@ StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
   return (stmap_[udcCompCode] = result);
 }
 
+inline
 double StandardEvaluator::evaluate(const UDC& udc_,
                                   const UDCNetwork& unet_,
                                   uvertex_t uv_,
