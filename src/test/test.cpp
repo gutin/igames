@@ -55,4 +55,15 @@ BOOST_AUTO_TEST_SUITE( staticStochasticAlgorithm )
     BOOST_CHECK_CLOSE(expectedValue, StandardDynamicEvaluator().evaluate(n, B, staticPolicy), 1e-05);
   }
 
+  // Test the deterministic algorithm
+  BOOST_AUTO_TEST_CASE( deterministicMILP )
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.8/Pat12.rcp");
+    
+    StaticPolicy staticPolicy;
+    double actVal = deterministicPolicy(n, B, staticPolicy);
+    BOOST_REQUIRE_EQUAL(54, actVal);
+  }
 BOOST_AUTO_TEST_SUITE_END()

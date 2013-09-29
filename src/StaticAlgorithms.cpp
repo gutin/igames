@@ -186,9 +186,166 @@ std::string StaticPolicy::asString() const
 }
 
 // Work out a static policy from a determinsitic algorithm
-void deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_)
+double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_)
 {
-  //TODO: I'll do this one later - not top priority
+  // Use a solver to get the optimal deterministic policy
+  IloEnv env;
+  IloModel model(env);
+
+  // The main decision variables of the problem from which we derive the interdiction pattern
+  IloBoolVarArray theta(env); 
+  
+  typedef std::map<vertex_t, size_t> VariableIndexMap; 
+  std::map<vertex_t, VariableIndexMap> vars;
+  VariableIndexMap endTasks;
+
+  size_t u_index = 0;
+  IloNumVarArray us(env), ds(env);  
+  //Create the variables
+  vertex_i vi, vi_end;
+  for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
+  {
+    std::stringstream ss;
+    ss << "x_" << *vi; 
+    theta.add(IloBoolVar(env, ss.str().c_str()));
+
+    ss.str("");
+    ss << "d_" << *vi;
+    ds.add(IloNumVar(env, IloNum(0), std::numeric_limits<IloNum>::max(), ss.str().c_str()));
+
+    oute_i oei, oei_end;
+    for(boost::tie(oei, oei_end) = boost::out_edges(*vi ,net_.graph()); oei != oei_end; ++oei)
+    {
+      vertex_t successor = boost::target(*oei, net_.graph());
+      VariableIndexMap& sucs = vars[*vi];
+      
+      ss.str("");
+      ss << "u_" << *vi << "_" << successor; 
+      us.add(IloNumVar(env, IloNum(0), std::numeric_limits<IloNum>::max(), ss.str().c_str()));
+      sucs[successor] = u_index;
+      u_index++;
+
+      oute_i oesi, oesi_end;
+      boost::tie(oesi, oesi_end)  = boost::out_edges(successor, net_.graph());
+      if(oesi == oesi_end)
+      {
+        ss.str("");
+        ss << "u_" << successor << "_t";
+        us.add(IloNumVar(env, IloNum(0), std::numeric_limits<IloNum>::max(), ss.str().c_str()));
+        endTasks[successor] = u_index;
+        u_index++;
+      }
+    }
+  }
+
+  //Create the objective function
+  IloExpr objectiveExpr(env);
+  BOOST_FOREACH(VariableIndexMap::value_type& entry, endTasks)
+  {
+    objectiveExpr += net_.graph()[entry.first].expNormal() * us[entry.second];
+  }
+  for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
+  {
+    oute_i oei, oei_end;
+    for(boost::tie(oei, oei_end) = boost::out_edges(*vi ,net_.graph()); oei != oei_end; ++oei)
+    {
+      vertex_t successor = boost::target(*oei, net_.graph());
+      objectiveExpr += net_.graph()[*vi].expNormal() * us[vars.at(*vi).at(successor)];
+    }
+    objectiveExpr += ds[*vi];
+  }
+  model.add(IloMaximize(env, objectiveExpr));
+
+  // Constraints
+  for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
+  {
+    // Flow constraints first
+    IloExpr flowConExpr(env);
+    ine_i iei, iei_end;
+    boost::tie(iei, iei_end) = boost::in_edges(*vi, net_.graph());
+    for(;iei != iei_end; ++iei)
+    {
+      vertex_t pred = boost::source(*iei, net_.graph());
+      flowConExpr += us[vars.at(pred).at(*vi)];
+
+    }
+    oute_i oesi, oesi_end;
+    boost::tie(oesi, oesi_end)  = boost::out_edges(*vi, net_.graph());
+    if(oesi == oesi_end)
+    {
+      flowConExpr -= us[endTasks.at(*vi)];
+    }
+    for(;oesi != oesi_end; ++oesi)
+    {
+      vertex_t succ = boost::target(*oesi, net_.graph());
+      flowConExpr -= us[vars.at(*vi).at(succ)];
+    }
+    model.add(flowConExpr <= 0);
+
+    // Then control the delay variable through big-M tricks
+    IloExpr bound(env), bound2(env);
+    bound += M * theta[*vi];
+    double advantage = net_.graph()[*vi].expDelayed() - net_.graph()[*vi].expNormal();
+    if(advantage <= 0 && !net_.isEnd(*vi) && !net_.isStart(*vi))
+      std::cout << "Warning.. no advantage to interdicting " << *vi << std::endl;
+
+    boost::tie(oesi, oesi_end)  = boost::out_edges(*vi, net_.graph());
+    if(oesi == oesi_end)
+    {
+      bound2 += advantage * us[endTasks.at(*vi)];
+    }
+    for(;oesi != oesi_end; ++oesi)
+    {
+      vertex_t succ = boost::target(*oesi, net_.graph());
+      bound2 += advantage * us[vars.at(*vi).at(succ)];
+    }
+
+    model.add(ds[*vi] <= bound);
+    model.add(ds[*vi] <= bound2);
+  }
+  IloExpr finalFlowConExpr(env);
+  BOOST_FOREACH(VariableIndexMap::value_type& entry, endTasks)
+  {
+    finalFlowConExpr += us[entry.second];
+  }
+  model.add(finalFlowConExpr <= 1);
+
+  // Now the budget constraint
+  IloExpr budgetExpr(env);
+  size_t activityIndex = 0;
+  for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
+  {
+    budgetExpr += theta[*vi];
+  }
+  model.add(budgetExpr <= static_cast<IloInt>(budget_));
+  std::cout << "Finished building deterministic model. Solving." << std::endl;
+  try 
+  {
+    IloCplex cplex(model);
+    // Uncomment below line to debug
+    cplex.exportModel("determ.lp");
+    cplex.solve();
+
+    env.out() << "Solution status = " << cplex.getStatus() << std::endl;
+    env.out() << "Solution value  = " << cplex.getObjValue() << std::endl;
+
+    for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
+    {
+      if(cplex.getValue(theta[*vi]) == 1)
+        policy_ << *vi;
+    }
+    std::cout << "The static policy is " << policy_.asString() << std::endl;
+    return cplex.getObjValue();
+  }
+  catch(IloException& e)
+  {
+    std::cerr << "Ilo exception caught: " << e << std::endl;
+  }
+  catch(...)
+  {
+    std::cerr << "Some other unknown exception" << std::endl;
+  }
+  return 0;
 }
 
 double staticStochasticPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_)
@@ -201,7 +358,8 @@ double staticStochasticPolicy(const Network& net_, size_t budget_, StaticPolicy&
   IloBoolVarArray theta(env); 
   populateStaticStochasticModel(net_, budget_, env, model, theta); 
 
-  try {
+  try 
+  {
     IloCplex cplex(model);
     //NOTE: Uncomment this line to debug the problem
     //cplex.exportModel("test.lp");
