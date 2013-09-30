@@ -1,5 +1,5 @@
 BOOST_HEADER_LOCATION = /opt/local/include
-DANIEL_LIB_LOCATION = /opt/local/lib
+BOOST_LIB_LOCATION = /opt/local/lib
 CORE_LIBS = /usr/lib
 INSTALL_DIR = ../install
 
