@@ -12,13 +12,13 @@ namespace ig { namespace core {
 struct StateTemplate
 {
   uvertex_t _udc;
-  int _activationCode;
+  size_t _activationCode;
 
-  StateTemplate(uvertex_t udc_=0, int activationCode_=0) :
+  StateTemplate(uvertex_t udc_=0, size_t activationCode_=0) :
     _udc(udc_), _activationCode(activationCode_) {}
 };
 
-typedef std::map<int, StateTemplate> StateTemplateMap; 
+typedef std::map<size_t, StateTemplate> StateTemplateMap; 
 
 struct StandardEvaluator
 {
@@ -27,7 +27,7 @@ struct StandardEvaluator
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,
-                  int fcode, StateTemplateMap& stmap);  
+                  size_t fcode, StateTemplateMap& stmap);  
 };
 
 typedef boost::unordered_map<State, ActionSharedPtr, StateHash> DynamicPolicy;
@@ -45,7 +45,7 @@ public:
 
 private:
   template<class DecisionStoragePolicy>
-  static int solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&);
+  static size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&);
 
   static size_t tau(uvertex_t udc_, const UDCNetwork& net_, const State& state, size_t budget_); 
 };
@@ -100,7 +100,7 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
   {
     uvertex_i uPtr = uPtrs[i];
     std::cout << "UDC[" << *uPtr << "] [" << (++udcCount) << "/" << numUDCs << "]" << std::endl;
-    int states = solveUDC(uPtr, unet, net_, budget_, storagePolicy_);
+    size_t states = solveUDC(uPtr, unet, net_, budget_, storagePolicy_);
     std::cout << "Solved UDC. Total of " << states << std::endl;
     totalStates += states;
 
@@ -119,7 +119,7 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
   }
   std::cout << "Solving final UDC - the start one " << std::endl; 
   uvertex_i startUdc = uPtrs[numUDCs-1];
-  int states = solveUDC(startUdc, unet, net_, budget_, storagePolicy_);
+  size_t states = solveUDC(startUdc, unet, net_, budget_, storagePolicy_);
   std::cout << "Last one had " << states << " states" << std::endl;
   totalStates += states;
   std::cout << "In total there were " << totalStates << " states" << std::endl;
@@ -130,30 +130,30 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
 
 template<class SE>
 template<class DSP>
-int DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_, 
+size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_, 
                                  UDCNetwork& unet_,
                                  const Network& net_,
                                  size_t budget_,
                                  DSP& storagePolicy_)
 {
   StateTemplateMap stmap;
-  int stateCount(0);
+  size_t stateCount(0);
   UDC& udc = unet_[*uPtr_];
-  int maxFCode = (1 << udc.size()) - 2;
+  size_t maxFCode = (1 << udc.size()) - 2;
   std::cout << "Starting with a maximum finish code of " << maxFCode 
             << " for UDC " << net_.asString(udc._tasks) << std::endl;
   
   size_t N = udc.size();
   for(size_t y = 0; y <= budget_; ++y)
   {
-    for(int fcode = maxFCode; fcode >= 0; --fcode)
+    for(size_t fcode = maxFCode; (fcode + 1) >= 1; --fcode)
     {
       State s(y);
-      int dormants = ((1 << N) -1) & fcode;
+      size_t dormants = ((1L << N) -1) & fcode;
 
-      for(int i = 0; i < N; ++i)
+      for(size_t i = 0; i < N; ++i)
       {
-        if(dormants & (1 << i))
+        if(dormants & (1L << i))
         {
           s._dormant.insert(udc._tasks[i]);
         }
@@ -208,20 +208,20 @@ int DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
                           std::inserter(s._active, s._active.begin()));
 
       OrderedTaskSet active;
-      int maxActiveCode = (1 << s._active.size()) - 1;
-      for(int activeCombo = maxActiveCode; activeCombo >= 0; --activeCombo)
+      size_t maxActiveCode = (1 << s._active.size()) - 1;
+      for(int activeCombo = maxActiveCode; (activeCombo + 1) >= 1; --activeCombo)
       {
-        int realActiveCode = 0;
+        size_t realActiveCode = 0;
         OrderedTaskSet active;
-        int lastActive = 0;
-        for(int i = 0 ; i < N; ++i)
+        size_t lastActive = 0;
+        for(size_t i = 0 ; i < N; ++i)
         {
-          if(((1 << i) & dormants) == 0)
+          if(((1L << i) & dormants) == 0)
           {
-            if((1 << lastActive) & activeCombo)
+            if((1L << lastActive) & activeCombo)
             {
               active.insert(udc._tasks[i]);
-              realActiveCode |= (1 << i);
+              realActiveCode |= (1L << i);
             }
             ++lastActive;
           }
@@ -234,7 +234,7 @@ int DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
          
         stateCount++;
 
-        long tau = (1 << 2 * N)  * (budget_ - y);
+        size_t tau = (1 << 2 * N)  * (budget_ - y);
         tau |= (1 << N) * fcode;
         tau |= realActiveCode;
 
@@ -255,8 +255,10 @@ int DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
           }
 
           if(candidate->size() > y)
-            std::cerr << "Invalid action sleected!" << std::endl;
-
+          {
+            std::cout << "Invalid action sleected!" << std::endl;
+            abort();
+          }
           double totalRate = 0;
           BOOST_FOREACH(vertex_t v, s._active)
           {
@@ -294,7 +296,7 @@ size_t DynamicAlgorithm<SE>::tau(uvertex_t udc_,
 
   BOOST_FOREACH(vertex_t t, unet_[udc_]._tasks)
   {
-    int dig = (1 << count);
+    size_t dig = (1L << count);
     if(state._active.find(t) != state._active.end()  &&
        state._interdicted.find(t) == state._interdicted.end())
     {
@@ -305,7 +307,7 @@ size_t DynamicAlgorithm<SE>::tau(uvertex_t udc_,
 
   BOOST_FOREACH(vertex_t t, unet_[udc_]._tasks)
   {
-    int dig = (1 << count);
+    size_t dig = (1L << count);
     if(state._dormant.find(t) != state._dormant.end())
     {
       result += dig;
@@ -322,9 +324,9 @@ StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
                             StateTemplateMap& stmap_, const Network& net_,
                             const UDCNetwork& unet_, int fcode_)
 {
-  int tidx = udc_._activity2UDCIndex[u_];
-  int bitnum = (1 << tidx);
-  int udcCompCode = fcode_ | bitnum;
+  size_t tidx = udc_._activity2UDCIndex[u_];
+  size_t bitnum = (1L << tidx);
+  size_t udcCompCode = fcode_ | bitnum;
 
   if(stmap_.find(udcCompCode) != stmap_.end())
   {
@@ -399,7 +401,7 @@ StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
   }
   
   const TaskList& nextUDCTasks = unet_._ug[theUDC]._tasks;
-  int nextFinishCode = 0;
+  size_t nextFinishCode = 0;
   for(size_t i = 0; i < nextUDCTasks.size(); ++i)
   {
     vertex_t nt = nextUDCTasks[i];
@@ -420,7 +422,7 @@ double StandardEvaluator::evaluate(const UDC& udc_,
                                   const State& state_,
                                   const ActionSharedPtr& candidate_,
                                   double totalRate_, size_t budget_,
-                                  int fcode_, StateTemplateMap& stmap_)
+                                  size_t fcode_, StateTemplateMap& stmap_)
 {
   double value = 0;
   if(state_._active.find(net_.end()) != state_._active.end() ||
@@ -440,10 +442,10 @@ double StandardEvaluator::evaluate(const UDC& udc_,
     }
     else
     {
-      long tav = (1L << (2* stUDC._tasks.size())) *
+      size_t tav = (1L << (2* stUDC._tasks.size())) *
                  (budget_ - state_._res + candidate_->size());
       tav |= (1L << stUDC._tasks.size()) * st._activationCode;
-      long tmp = (~0) - ((1L << stUDC._tasks.size()) - 1L) + st._activationCode;
+      size_t tmp = (~0) - ((1L << stUDC._tasks.size()) - 1L) + st._activationCode;
       tav |= ~(tmp);
 
       BOOST_FOREACH(vertex_t t, *candidate_)

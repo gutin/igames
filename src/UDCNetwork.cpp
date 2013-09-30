@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <cstdlib>
 
 using namespace std;
 using namespace boost;
@@ -285,13 +286,13 @@ void UDC::store(size_t tau_, double val_)
 
 double UDC::value(size_t tav_) const
 {
-  std::vector<long>::const_iterator indexIter = util::binary_search(_indexes.begin(),
+  std::vector<size_t>::const_iterator indexIter = util::binary_search(_indexes.begin(),
                                                                     _indexes.end(),
                                                                     tav_);
   if(indexIter == _indexes.end())
   {
-    std::cerr << "Error! Failed to value for " << tav_ << std::endl;
-    return 0;
+    std::cout << "Error! Failed to value for " << tav_ << std::endl;
+    abort();
   }
   return _v[std::distance(_indexes.begin(), indexIter)];
 }

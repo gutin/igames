@@ -17,7 +17,7 @@ public:
   OrderedTaskSet _taskSet;
   OrderedTaskSet _finished;
   std::vector<float> _v;
-  std::vector<long> _indexes;
+  std::vector<size_t> _indexes;
   std::vector<int> _activity2UDCIndex;
   BigInt _taskBVec;
   size_t _dependCount;

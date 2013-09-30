@@ -21,6 +21,8 @@ void populateStaticStochasticModel(const Network& net_, size_t budget_, IloEnv& 
   // This is ok because ultimately we're just preparing the model for it to be solved later
   StateCollection sc;
   DynamicAlgorithm<NullEvaluator>::execute(net_, 0, sc);
+  
+  std::cout << "Got the states .. all " << sc._statesAggregated.size() << " of them " << std::endl;  
 
   size_t index = 0;
   State startingState;
@@ -41,6 +43,8 @@ void populateStaticStochasticModel(const Network& net_, size_t budget_, IloEnv& 
     ++index;
   }
 
+  std::cout << "Added the objective function" << std::endl;
+
   index = 0; //reset index for iterating through tasks
 
   IloNumVarArray alpha(env), beta(env);
@@ -52,6 +56,7 @@ void populateStaticStochasticModel(const Network& net_, size_t budget_, IloEnv& 
   vertex_i vi, vi_end;
   for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
   {
+    std::cout << "alpha/beta contraints for vertex " << *vi << std::endl;
     // disregard start and end tasks
     if(net_.isStart(*vi) || net_.isEnd(*vi))
       continue;

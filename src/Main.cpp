@@ -56,6 +56,7 @@ int main(int ac_, char** av_)
 
   Network n;
   std::string rcpFile;
+  std::cout << sizeof(size_t) << " is the answer" << std::endl;
 
   if(vm.count(SIZE_ARG_NAME) && vm.count(INSTANCE_ARG_NAME) &&
      vm.count(ORDER_STRENGTH_ARG_NAME) && vm.count(RCPBASE_ARG_NAME))
