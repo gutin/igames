@@ -147,7 +147,7 @@ void populateStaticStochasticModel(const Network& net_, size_t budget_, IloEnv& 
     budgetExpr += theta[activityIndex];
     activityIndex++;
   }
-  model.add(budgetExpr <= static_cast<IloInt>(budget_));
+  model.add(budgetExpr == static_cast<IloInt>(budget_));
 }
 
 }
