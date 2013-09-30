@@ -1,12 +1,12 @@
-BOOST_HEADER_LOCATION = /usr/include
-BOOST_LIB_LOCATION = /usr/lib
+BOOST_HEADER_LOCATION = /opt/local/include
+BOOST_LIB_LOCATION = /opt/local/lib
 CORE_LIBS = /usr/lib
-INSTALL_DIR = ../install2
+INSTALL_DIR = ../install
 
-SYSTEM = x86-64_debian4.0_4.1
-CPLEX_BASE_PATH = /homes/eg08/cplex121
-CPLEX_PATH= $(CPLEX_BASE_PATH)/cplex121
-CONCERT_PATH = $(CPLEX_BASE_PATH)/concert29
+SYSTEM = x86-64_darwin9_gcc4.0
+CPLEX_BASE_PATH = /Users/gutin/Applications/IBM/ILOG/CPLEX_Studio_Academic123
+CPLEX_PATH= $(CPLEX_BASE_PATH)/cplex
+CONCERT_PATH = $(CPLEX_BASE_PATH)/concert
 CPLEX_LIBS = $(CPLEX_PATH)/lib/$(SYSTEM)/static_pic
 CPLEX_HEADERS =  $(CPLEX_PATH)/include
 CONCERT_LIBS = $(CONCERT_PATH)/lib/$(SYSTEM)/static_pic
@@ -25,7 +25,7 @@ INCLUDES = -I ${BOOST_HEADER_LOCATION} -I $(CPLEX_HEADERS) -I $(CONCERT_HEADERS)
 LINKS = -L${BOOST_LIB_LOCATION}  -L$(CORE_LIBS)
 CPPFLAGS = -MMD $(OPT_LEVEL) $(INCLUDES) -DIL_STD
 LFLAGS = $(OPT_LEVEL) -lboost_program_options $(LINKS)
-HEURISTIC_LFLAGS = -L$(CPLEX_LIBS) -lilocplex -lcplex -L$(CONCERT_LIBS) -lconcert -lm -lpthread
+HEURISTIC_LFLAGS = -framework CoreFoundation -framework IOKit -L$(CPLEX_LIBS) -lilocplex -lcplex -L$(CONCERT_LIBS) -lconcert -lm -lpthread
 
 LIB_NAME = $(INSTALL_DIR)/igames.a
 HEURISTIC_LIB_NAME = $(INSTALL_DIR)/higames.a
