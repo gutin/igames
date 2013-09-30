@@ -37,6 +37,7 @@ LIB_SRCS = Network.cpp \
           Task.cpp \
           State.cpp \
           Utils.cpp \
+          DynamicAlgoUDC.cpp \
 					UDC.cpp
 
 LIB_HEADERS = DynamicAlgorithm.hpp \
@@ -47,6 +48,7 @@ LIB_HEADERS = DynamicAlgorithm.hpp \
 							AntichainNetwork.hpp \
 							AntichainNetwork.cpp \
 							CommonTypes.hpp \
+							DynamicAlgoUDC.hpp \
               UDC.hpp
 
 HEURISTIC_LIB_SRCS = StaticAlgorithms.cpp

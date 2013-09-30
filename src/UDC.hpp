@@ -12,8 +12,6 @@ public:
   TaskList _tasks;
   OrderedTaskSet _taskSet;
   OrderedTaskSet _finished;
-  std::vector<float> _v;
-  std::vector<size_t> _indexes;
   std::vector<int> _activity2UDCIndex;
   BigInt _taskBVec;
   size_t _dependCount;
@@ -30,19 +28,10 @@ public:
 
   size_t size() const { return _tasks.size(); }
 
-  void store(size_t tau_, double val_);
-  double value(size_t tau_) const;
-
   void cleanup();
 private:
   void rank(const TaskSet&, const DirectedGraph&);
 };
-
-typedef AntichainNetwork<UDC> UDCNetwork;
-typedef AntichainPtrs<UDC>::type UDCPtrs;
-typedef acvertex_t<UDC>::type uvertex_t;
-typedef acvertex_i<UDC>::type uvertex_i;
-typedef ac_oute_i<UDC>::type u_oute_i;
 
 }}
 

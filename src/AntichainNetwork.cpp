@@ -28,6 +28,7 @@ namespace
 
 namespace ig { namespace core {
 
+
 template <class AC>
 AntichainNetwork<AC>::AntichainNetwork(const Network& net_)
 {
@@ -138,19 +139,13 @@ bool AntichainNetwork<AC>::antichain(const DirectedGraph& net_,
 
   BOOST_FOREACH(const vertex_t& v, soFar_)
   {
-    if(reachable(net_, v, node_)
-       || reachable(net_, node_, v))
+    if(boost::edge(v, node_, net_).second
+       || boost::edge(node_, v, net_).second)
     {
       return false;
     }
   }
   return true;
-}
-
-template <class AC>
-bool AntichainNetwork<AC>::reachable(const DirectedGraph& tc_, vertex_t one_, vertex_t other_)
-{
-  return boost::edge(one_, other_, tc_).second;
 }
 
 

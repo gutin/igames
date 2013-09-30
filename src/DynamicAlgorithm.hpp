@@ -1,6 +1,7 @@
 #ifndef DYNAMICALGORITHM_H
 #define DYNAMICALGORITHM_H
 
+#include "DynamicAlgoUDC.hpp"
 #include "CommonTypes.hpp"
 #include "State.hpp"
 #include "Utils.hpp"
@@ -23,7 +24,7 @@ typedef std::map<size_t, StateTemplate> StateTemplateMap;
 struct StandardEvaluator
 {
 
-  static double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
+  static double evaluate(const DynamicAlgoUDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,
@@ -138,7 +139,7 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
 {
   StateTemplateMap stmap;
   size_t stateCount(0);
-  UDC& udc = unet_[*uPtr_];
+  DynamicAlgoUDC& udc = unet_[*uPtr_];
   size_t maxFCode = (1 << udc.size()) - 2;
   std::cout << "Starting with a maximum finish code of " << maxFCode 
             << " for UDC " << net_.asString(udc._tasks) << std::endl;
@@ -320,7 +321,7 @@ size_t DynamicAlgorithm<SE>::tau(uvertex_t udc_,
 }
 
 inline
-StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
+StateTemplate& nextTemplate(vertex_t u_, const DynamicAlgoUDC& udc_, uvertex_t uv_,
                             StateTemplateMap& stmap_, const Network& net_,
                             const UDCNetwork& unet_, int fcode_)
 {
@@ -415,7 +416,7 @@ StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
 }
 
 inline
-double StandardEvaluator::evaluate(const UDC& udc_,
+double StandardEvaluator::evaluate(const DynamicAlgoUDC& udc_,
                                   const UDCNetwork& unet_,
                                   uvertex_t uv_,
                                   const Network& net_, 
@@ -435,7 +436,7 @@ double StandardEvaluator::evaluate(const UDC& udc_,
   {
     double nextVal = 0;
     StateTemplate& st = nextTemplate(u, udc_,  uv_,stmap_, net_, unet_, fcode_); 
-    const UDC& stUDC = unet_[st._udc]; 
+    const DynamicAlgoUDC& stUDC = unet_[st._udc]; 
     if(stUDC._taskSet.find(net_.end()) != stUDC._taskSet.end())
     {
       nextVal = 0;
