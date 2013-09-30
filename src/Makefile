@@ -35,17 +35,19 @@ HEURISTICS_BIN = $(INSTALL_DIR)/heuristic
 
 LIB_SRCS = Network.cpp \
           Task.cpp \
-          UDCNetwork.cpp \
           State.cpp \
-          Utils.cpp
+          Utils.cpp \
+					UDC.cpp
 
 LIB_HEADERS = DynamicAlgorithm.hpp \
 							State.hpp \
 							Task.hpp \
 							Utils.hpp \
 							Network.hpp \
-							UDCNetwork.hpp \
-							CommonTypes.hpp
+							AntichainNetwork.hpp \
+							AntichainNetwork.cpp \
+							CommonTypes.hpp \
+              UDC.hpp
 
 HEURISTIC_LIB_SRCS = StaticAlgorithms.cpp
 HEURISTIC_LIB_HEADERS = StaticAlgorithms.hpp \

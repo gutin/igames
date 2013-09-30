@@ -1,5 +1,5 @@
 #include "Network.hpp"
-#include "UDCNetwork.hpp"
+#include "UDC.hpp"
 
 #include "Task.hpp"
 #include "StaticAlgorithms.hpp"

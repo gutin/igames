@@ -2,7 +2,7 @@
 #define DETERMINISTICALGORITHM_H
 
 #include "CommonTypes.hpp"
-#include "UDCNetwork.hpp"
+#include "UDC.hpp"
 #include "State.hpp"
 #include "DynamicAlgorithm.hpp"
 

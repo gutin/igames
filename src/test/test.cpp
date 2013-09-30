@@ -3,7 +3,7 @@
 #include <boost/test/floating_point_comparison.hpp>
 
 #include <Network.hpp>
-#include <UDCNetwork.hpp>
+#include <UDC.hpp>
 #include <DynamicAlgorithm.hpp>
 #include <DynamicEvaluator.hpp>
 #include <StaticAlgorithms.hpp>
