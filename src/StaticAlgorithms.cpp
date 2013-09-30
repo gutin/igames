@@ -322,7 +322,7 @@ double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& po
   {
     budgetExpr += theta[*vi];
   }
-  model.add(budgetExpr <= static_cast<IloInt>(budget_));
+  model.add(budgetExpr == static_cast<IloInt>(budget_));
   std::cout << "Finished building deterministic model. Solving." << std::endl;
   try 
   {
@@ -336,7 +336,7 @@ double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& po
 
     for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
     {
-      if(cplex.getValue(theta[*vi]) == 1)
+      if(std::abs(cplex.getValue(theta[*vi]) - 1) < 1e-02)
         policy_ << *vi;
     }
     std::cout << "The static policy is " << policy_.asString() << std::endl;

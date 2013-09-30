@@ -65,5 +65,6 @@ BOOST_AUTO_TEST_SUITE( staticStochasticAlgorithm )
     StaticPolicy staticPolicy;
     double actVal = deterministicPolicy(n, B, staticPolicy);
     BOOST_REQUIRE_EQUAL(54, actVal);
+    BOOST_REQUIRE_EQUAL(3, staticPolicy._targets.size());
   }
 BOOST_AUTO_TEST_SUITE_END()
