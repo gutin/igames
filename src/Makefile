@@ -1,5 +1,5 @@
 BOOST_HEADER_LOCATION = /opt/local/include
-ELI_LIB_LOCATION = /opt/local/lib
+SHELLY_LIB_LOCATION = /opt/local/lib
 CORE_LIBS = /usr/lib
 INSTALL_DIR = ../install
 
