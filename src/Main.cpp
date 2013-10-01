@@ -3,6 +3,8 @@
 
 #include "Task.hpp"
 #include "DynamicAlgorithm.hpp"
+#include "PersistedPolicy.hpp"
+
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
 
@@ -37,6 +39,7 @@ int main(int ac_, char** av_)
     (ORDER_STRENGTH_ARG_NAME, po::value<double>(), "Order strength")
     (RCPBASE_ARG_NAME, po::value<std::string>(), "Base directory with .rcp files")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
+    ("persist,P",po::value<std::string>(), "Persist to the given file")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
 
   po::variables_map vm;
@@ -91,7 +94,19 @@ int main(int ac_, char** av_)
   std::cout << "There are " << boost::num_edges(n.graph()) << " edges" << std::endl;
   std::cout << "There are " << boost::num_vertices(n.graph()) << " vertices" << std::endl;
 
-  double value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, budget);
+  
+  double value = 0;
+  if(vm.count("persist"))
+  {
+    std::string file = vm["persist"].as<std::string>();
+    std::cout << "Persisting policy to file: " << file.c_str() << std::endl;
+    PersistantStoragePolicy psp(file, n);
+    value = DynamicAlgorithm<StandardEvaluator>::execute(n, budget, psp); 
+  }
+  else
+  {
+    value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, budget);
+  }
   std::cout << value << std::endl;
   return 0;
 }

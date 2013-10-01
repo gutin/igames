@@ -37,6 +37,7 @@ LIB_SRCS = Network.cpp \
           Task.cpp \
           UDCNetwork.cpp \
           State.cpp \
+          PersistedPolicy.cpp \
           Utils.cpp
 
 LIB_HEADERS = DynamicAlgorithm.hpp \
@@ -45,6 +46,7 @@ LIB_HEADERS = DynamicAlgorithm.hpp \
 							Utils.hpp \
 							Network.hpp \
 							UDCNetwork.hpp \
+							PersistedPolicy.hpp \
 							CommonTypes.hpp
 
 HEURISTIC_LIB_SRCS = StaticAlgorithms.cpp

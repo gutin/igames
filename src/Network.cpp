@@ -23,7 +23,7 @@ vertex_t Network::add(const Task& t_)
   return u;
 }
 
-inline size_t Network::size() const
+size_t Network::size() const
 {
   return boost::num_vertices(_g);
 }
