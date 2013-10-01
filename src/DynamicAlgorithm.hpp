@@ -139,7 +139,7 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
   StateTemplateMap stmap;
   size_t stateCount(0);
   UDC& udc = unet_[*uPtr_];
-  size_t maxFCode = (1 << udc.size()) - 2;
+  size_t maxFCode = (1L << udc.size()) - 2;
   std::cout << "Starting with a maximum finish code of " << maxFCode 
             << " for UDC " << net_.asString(udc._tasks) << std::endl;
   
@@ -208,7 +208,7 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
                           std::inserter(s._active, s._active.begin()));
 
       OrderedTaskSet active;
-      size_t maxActiveCode = (1 << s._active.size()) - 1;
+      size_t maxActiveCode = (1L << s._active.size()) - 1;
       for(int activeCombo = maxActiveCode; (activeCombo + 1) >= 1; --activeCombo)
       {
         size_t realActiveCode = 0;
@@ -234,15 +234,15 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
          
         stateCount++;
 
-        size_t tau = (1 << 2 * N)  * (budget_ - y);
-        tau |= (1 << N) * fcode;
+        size_t tau = (1L << 2 * N)  * (budget_ - y);
+        tau |= (1L << N) * fcode;
         tau |= realActiveCode;
 
         double maxVal = 0;
         ActionSharedPtr bestAction;
 
         TaskList intEligible(active.begin(), active.end());
-        for(size_t i = 0; i < (1 << intEligible.size()); ++i)
+        for(size_t i = 0; i < (1L << intEligible.size()); ++i)
         {
           if(ig::core::util::numBitsSet(i) > y) continue;
           ActionSharedPtr candidate(new Action); 
@@ -315,7 +315,7 @@ size_t DynamicAlgorithm<SE>::tau(uvertex_t udc_,
     ++count;
   }
 
-  result += (1 << (2*unet_[udc_].size())) * (budget_ - state._res);
+  result += (1L << (2*unet_[udc_].size())) * (budget_ - state._res);
   return result;
 }
 
@@ -342,7 +342,7 @@ StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
   for(size_t i = 0; i < N; ++i)
   {
     vertex_t t = udc_._tasks[i];
-    if((1 << i) & udcCompCode)
+    if((1L << i) & udcCompCode)
     {
       eligible |= net_._successorbs[t];
       allFinished.set(t);
@@ -407,7 +407,7 @@ StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
     vertex_t nt = nextUDCTasks[i];
     if(allFinished[nt])
     {
-      nextFinishCode |= (1 << i);
+      nextFinishCode |= (1L << i);
     }
   }
   StateTemplate result(theUDC, nextFinishCode);
@@ -452,19 +452,19 @@ double StandardEvaluator::evaluate(const UDC& udc_,
       {
         if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
         {
-          tav &= ~(1 << stUDC._activity2UDCIndex[t]);
+          tav &= ~(1L << stUDC._activity2UDCIndex[t]);
         }
       }
       BOOST_FOREACH(vertex_t t, state_._interdicted)
       {
         if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
         {
-          tav &= ~(1 << stUDC._activity2UDCIndex[t]);
+          tav &= ~(1L << stUDC._activity2UDCIndex[t]);
         }
       }
       if(stUDC._taskSet.find(u) != stUDC._taskSet.end())
       {
-        tav &= ~(1 << stUDC._activity2UDCIndex[u]);
+        tav &= ~(1L << stUDC._activity2UDCIndex[u]);
       }
       nextVal = stUDC.value(tav);
     }
