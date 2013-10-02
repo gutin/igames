@@ -10,23 +10,28 @@ namespace ig { namespace core {
 ActionSharedPtr PersistedPolicy::at(const State& state_) const
 {
   ActionSharedPtr ret(new Action);
+  _input.seekg(0, std::ios::end);
+  size_t length = _input.tellg();
   _input.seekg(0, std::ios::beg);
-  State s;
-  while(!_input.eof())
+  for(size_t pos = 0; pos < length; pos += 1 +  _net.size())
   {
+    State s;
     readState(s, ret);
     if(s == state_)
     {
       return ret;
     }
+    ret->clear();
   }
-  std::cerr << "Failed to find decision in state " << state_.asString() << std::endl;
+  std::cout << "Failed to find decision in state " << state_.asString() << std::endl;
+  abort();
 }
 
 void PersistedPolicy::readState(State& state_, ActionSharedPtr& actionPtr_) const
 {
   char buf[BUFFER_SIZE];
-  _input.read(buf, _net.size() + 1);
+  size_t bufferLen = _net.size() + 1;
+  _input.read(buf, bufferLen);
   vertex_i vi, vi_end;
   for(boost::tie(vi, vi_end) = boost::vertices(_net.graph()); vi != vi_end; ++vi)
   {
@@ -42,12 +47,14 @@ void PersistedPolicy::readState(State& state_, ActionSharedPtr& actionPtr_) cons
       case 3:
         state_._dormant.insert(*vi);
         break;
-      case 4:
+      case 5:
         state_._active.insert(*vi);
         actionPtr_->insert(*vi);
         break;
+      case 0:
+        break;
       default:
-        std::cout << "Unknown byte " << buf[*vi] << std::endl;
+        std::cout << "Unknown byte " << static_cast<int>(buf[*vi]) << " activity " << *vi << std::endl;
         abort();
     }
   }
@@ -74,7 +81,8 @@ PersistantStoragePolicy::PersistantStoragePolicy(const std::string& file_, const
 void PersistantStoragePolicy::operator() (const State& state_, const ActionSharedPtr& actionPtr_)
 {
   char buf[BUFFER_SIZE];
-  std::memset(buf, 0, _net.size() + 1);
+  size_t bufferLen = _net.size() + 1;
+  std::memset(buf, 0, bufferLen);
   BOOST_FOREACH(vertex_t t, state_._active)
   {
     buf[t] |= 1;
@@ -95,7 +103,7 @@ void PersistantStoragePolicy::operator() (const State& state_, const ActionShare
     buf[t] = 3;
   }
   buf[_net.size()] = state_._res;
-  _output.write(buf, _net.size() + 1);
+  _output.write(buf, bufferLen);
 }
 
 PersistantStoragePolicy::~PersistantStoragePolicy()
