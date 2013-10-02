@@ -1,4 +1,5 @@
 #include "Utils.hpp"
+#include <cassert>
 
 namespace ig { namespace core { namespace util {
 
@@ -9,6 +10,8 @@ nextState(const Network& net_,
           const OrderedTaskSet& finished_,
           vertex_t u_)
 {
+  assert(actionPtr_->size() <= state_._res);
+
   StateSharedPtr ret(new State(state_));
   ret->addInterdictedSet(*actionPtr_);
   ret->_active.erase(u_);
