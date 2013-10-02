@@ -8,8 +8,10 @@
 #include <DynamicAlgorithm.hpp>
 #include <DynamicEvaluator.hpp>
 #include <StaticAlgorithms.hpp>
+#include <Simulation.hpp>
 
 using namespace ig::core;
+using namespace ig::experiment;
 
 // Testing the dynamic stochastic algorithm
 BOOST_AUTO_TEST_SUITE( standardAlgorithm )
@@ -77,7 +79,7 @@ BOOST_AUTO_TEST_SUITE( persistedPolicy )
   // the optimal policy worked out are equal
   BOOST_AUTO_TEST_CASE( objectValueMustMatchEvaluated )
   {
-    const int B = 1;
+    const int B = 3;
     Network n;
     n.import("../samples/10-OS-0.8/Pat12.rcp");
     
@@ -90,5 +92,27 @@ BOOST_AUTO_TEST_SUITE( persistedPolicy )
     double workedOutVal = StandardDynamicEvaluator().evaluate(n, B, ppol);
 
     BOOST_CHECK_CLOSE(optValue, workedOutVal, 1e-05);
+  }
+
+  BOOST_AUTO_TEST_CASE(testSimulationAccurary)
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.8/Pat12.rcp");
+
+    double optValue = 0;
+    DynamicPolicy policy;
+    DynamicAlgorithm<StandardEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+    
+    NullStateVisitor vnull;
+    Simulation<DynamicPolicy, NullStateVisitor> sim(n, policy, vnull);
+    double mean = 0;
+    size_t N = 10000L;
+    for(size_t i = 0; i < N; ++i)
+    {
+      mean += sim.run(B);
+    }
+    mean /= N*1.0;
+    BOOST_CHECK_CLOSE(optValue, mean, 1);
   }
 BOOST_AUTO_TEST_SUITE_END()

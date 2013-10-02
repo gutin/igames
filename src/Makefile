@@ -32,6 +32,7 @@ HEURISTIC_LIB_NAME = $(INSTALL_DIR)/higames.a
 BIN = $(INSTALL_DIR)/main
 TEST_BIN = $(INSTALL_DIR)/unit-tests
 HEURISTICS_BIN = $(INSTALL_DIR)/heuristic
+EXP_BIN = $(INSTALL_DIR)/psample
 
 LIB_SRCS = Network.cpp \
           Task.cpp \
@@ -53,18 +54,21 @@ HEURISTIC_LIB_SRCS = StaticAlgorithms.cpp
 HEURISTIC_LIB_HEADERS = StaticAlgorithms.hpp \
 												DynamicEvaluator.hpp \
 							          DynamicEvaluator.cpp
+EXP_HEADERS = experiment/Simulation.hpp
 
 BIN_SRCS = Main.cpp
 HBIN_SRCS = HeuristicMain.cpp
 TEST_SRCS = test/test.cpp
+EXP_SRCS = experiment/PolicySampling.cpp
 
 LIB_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(LIB_SRCS))
 BIN_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(BIN_SRCS))
 TEST_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(TEST_SRCS))
 HEURISTIC_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(HEURISTIC_LIB_SRCS))
 HBIN_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(HBIN_SRCS))
+EXP_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(EXP_SRCS))
 
-all : headers install hinstall test run_test
+all : headers install hinstall einstall test run_test
 
 run_test :
 	$(INSTALL_DIR)/$(TEST_BIN)
@@ -72,7 +76,8 @@ run_test :
 headers :
 	if [ ! -d $(INSTALL_DIR)/include ]; then mkdir $(INSTALL_DIR)/include; fi
 	if [ ! -d $(INSTALL_DIR)/test ]; then mkdir $(INSTALL_DIR)/test; fi
-	cp $(LIB_HEADERS) $(HEURISTIC_LIB_HEADERS) $(INSTALL_DIR)/include/
+	if [ ! -d $(INSTALL_DIR)/experiment ]; then mkdir $(INSTALL_DIR)/experiment; fi
+	cp $(LIB_HEADERS) $(HEURISTIC_LIB_HEADERS) $(EXP_HEADERS) $(INSTALL_DIR)/include/
 
 library : $(LIB_OBJS)
 	if [ -f $(LIB_NAME) ]; then rm $(LIB_NAME); fi
@@ -90,6 +95,9 @@ test : library heuristics_lib $(TEST_OBJS) $(LIB_NAME) $(HEURISTIC_LIB_NAME)
 
 hinstall : heuristics_lib $(HBIN_OBJS) $(HEURISTIC_LIB_NAME) $(LIB_NAME)
 	 $(CXX) $(HBIN_OBJS) $(LFLAGS) $(HEURISTIC_LIB_NAME) $(LIB_NAME)  $(HEURISTIC_LFLAGS) -o $(HEURISTICS_BIN) 
+	
+einstall : library $(LIB_NAME)  $(EXP_OBJS)
+	$(CXX) $(EXP_OBJS) $(LIB_NAME) -o $(EXP_BIN) $(LFLAGS)
 
 $(INSTALL_DIR)/%.o: %.cpp 
 	$(CXX) $(CPPFLAGS) -c $< -o $(INSTALL_DIR)/$(subst .cpp,.o,$<)
