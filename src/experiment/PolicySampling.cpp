@@ -49,6 +49,7 @@ void interdictionProbs(const Network& net_, size_t budget_, const std::string& p
   Simulation<PersistedPolicy, InterdictionSamplingStateVisitor> sim(net_, ppol, isv);
   for(size_t i = 0; i < nruns_; ++i)
   {
+    std::cout << "Running simulation " << i << std::endl;
     sim.run(budget_);
     BOOST_FOREACH(vertex_t t, isv._interdictedTasks)
     {
