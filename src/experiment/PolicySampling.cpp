@@ -16,7 +16,15 @@ using namespace ig::experiment;
 
 struct InterdictionSamplingStateVisitor
 {
+  OrderedTaskSet _interdictedTasks;
 
+  void visit(const StateSharedPtr& /*state*/, const ActionSharedPtr& actionPtr_) 
+  {
+    BOOST_FOREACH(vertex_t t, *actionPtr_)
+    {
+      _interdictedTasks.insert(t);
+    }
+  }
 };
 
 namespace 
@@ -35,11 +43,24 @@ void interdictionProbs(const Network& net_, size_t budget_, const std::string& p
 {
   std::cout << "Performing the experiment" << std::endl; 
   PersistedPolicy ppol(pfile_, net_);
-  NullStateVisitor nullv;
-  Simulation<PersistedPolicy, NullStateVisitor> sim(net_, ppol, nullv);
+
+  std::vector<size_t> icounts(net_.size(), 0);
+  InterdictionSamplingStateVisitor isv;
+  Simulation<PersistedPolicy, InterdictionSamplingStateVisitor> sim(net_, ppol, isv);
   for(size_t i = 0; i < nruns_; ++i)
   {
     sim.run(budget_);
+    BOOST_FOREACH(vertex_t t, isv._interdictedTasks)
+    {
+      icounts[t]++;
+    }
+    isv._interdictedTasks.clear(); 
+  }
+
+  for(size_t i = 0; i < icounts.size(); ++i)
+  {
+    double prob = double(icounts[i]) / double(nruns_); 
+    std::cout << "Probability of interdicting [" <<  i << "] = [" << prob << "]" << std::endl; 
   }
 }
 
