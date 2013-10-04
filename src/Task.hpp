@@ -19,6 +19,7 @@ public:
   bool operator==(const Task& other) const;
         
   double _nu, _delta;
+  double _probDelaySuccess;
   int _index;
 };
 

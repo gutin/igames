@@ -19,6 +19,8 @@ http://boost.2283326.n4.nabble.com/Problem-in-using-Transitive-closure-on-Linux-
 #include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
 
+#define TASK_ATTR(task, attr) net_.graph()[(task)].attr
+
 #include <iostream>
 #include <vector>
 #include <bitset>

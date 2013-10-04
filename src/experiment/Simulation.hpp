@@ -31,7 +31,7 @@ struct NullStateVisitor
   {}
 };
 
-template <class InterdictionPolicy, class StateVisitor = NullStateVisitor>
+template <class InterdictionPolicy, class StateVisitor = NullStateVisitor, bool impunc = false>
 class Simulation
 {
 public:
@@ -46,8 +46,8 @@ private:
   StateVisitor& _visitor;
 };
 
-template <class IP, class SV>
-double Simulation<IP, SV>::run(size_t buget_)
+template <class IP, class SV, bool impunc>
+double Simulation<IP, SV, impunc>::run(size_t buget_)
 {
   StateSharedPtr statePtr(new State);
   ig::core::util::startingState(_net, buget_, *statePtr);
@@ -71,7 +71,16 @@ double Simulation<IP, SV>::run(size_t buget_)
       if(actionPtr->find(t) != actionPtr->end() ||
          statePtr->_interdicted.find(t) != statePtr->_interdicted.end())
       {
-        tDuration = genExponential(_net.graph()[t]._delta);
+        if(!impunc || 
+           ( impunc && (std::rand() / double(RAND_MAX)) < _net.graph()[t]._probDelaySuccess) )
+        {
+          //roll a dice on whether interdiction succeeded
+          tDuration = genExponential(_net.graph()[t]._delta);
+        }
+        else
+        {
+          tDuration = genExponential(_net.graph()[t]._nu);
+        }
       }
       else
       {

@@ -292,6 +292,14 @@ double UDC::value(size_t tav_) const
   if(indexIter == _indexes.end())
   {
     std::cout << "Error! Failed to value for " << tav_ << std::endl;
+    std::stringstream sstr;
+    sstr << "[ ";
+    BOOST_FOREACH(size_t idx, _indexes)
+    {
+      sstr << idx << " ";
+    }
+    sstr << "]";
+    std::cout << sstr.str() << std::endl;
     abort();
   }
   return _v[std::distance(_indexes.begin(), indexIter)];

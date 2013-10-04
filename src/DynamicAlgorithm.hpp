@@ -4,6 +4,8 @@
 #include "CommonTypes.hpp"
 #include "State.hpp"
 #include "Utils.hpp"
+#include "Network.hpp"
+#include "UDCNetwork.hpp"
 
 #include <boost/progress.hpp>
 
@@ -47,7 +49,6 @@ private:
   template<class DecisionStoragePolicy>
   static size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&);
 
-  static size_t tau(uvertex_t udc_, const UDCNetwork& net_, const State& state, size_t budget_); 
 };
 
 struct NoDecisionStorage
@@ -66,6 +67,38 @@ struct DecisionStorageInMemory
     _policy[state_] = action_;  
   }
 };
+
+inline size_t tau(const UDC& udc_, 
+    const State& state,
+    size_t budget_)
+{
+  size_t result(0);
+  size_t count(0);
+
+  BOOST_FOREACH(vertex_t t, udc_._tasks)
+  {
+    size_t dig = (1L << count);
+    if(state._active.find(t) != state._active.end()  &&
+       state._interdicted.find(t) == state._interdicted.end())
+    {
+      result += dig;
+    }
+    ++count;
+  }
+
+  BOOST_FOREACH(vertex_t t, udc_._tasks)
+  {
+    size_t dig = (1L << count);
+    if(state._dormant.find(t) != state._dormant.end())
+    {
+      result += dig;
+    }
+    ++count;
+  }
+
+  result += (1L << (2*udc_.size())) * (budget_ - state._res);
+  return result;
+}
 
 template <class SE>
 void DynamicAlgorithm<SE>::optimalPolicyAndValue(const Network& network_, size_t budget_,
@@ -125,7 +158,7 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
   std::cout << "In total there were " << totalStates << " states" << std::endl;
   State startingState;
   util::startingState(net_, budget_, startingState);
-  return unet[*startUdc].value(tau(*startUdc, unet, startingState, budget_));
+  return unet[*startUdc].value(tau(unet._ug[*startUdc], startingState, budget_));
 }
 
 template<class SE>
@@ -285,39 +318,6 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
 }
 
 
-template<class SE>
-size_t DynamicAlgorithm<SE>::tau(uvertex_t udc_, 
-    const UDCNetwork& unet_,
-    const State& state,
-    size_t budget_)
-{
-  size_t result(0);
-  size_t count(0);
-
-  BOOST_FOREACH(vertex_t t, unet_[udc_]._tasks)
-  {
-    size_t dig = (1L << count);
-    if(state._active.find(t) != state._active.end()  &&
-       state._interdicted.find(t) == state._interdicted.end())
-    {
-      result += dig;
-    }
-    ++count;
-  }
-
-  BOOST_FOREACH(vertex_t t, unet_[udc_]._tasks)
-  {
-    size_t dig = (1L << count);
-    if(state._dormant.find(t) != state._dormant.end())
-    {
-      result += dig;
-    }
-    ++count;
-  }
-
-  result += (1L << (2*unet_[udc_].size())) * (budget_ - state._res);
-  return result;
-}
 
 inline
 StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,

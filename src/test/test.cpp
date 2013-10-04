@@ -9,6 +9,7 @@
 #include <DynamicEvaluator.hpp>
 #include <StaticAlgorithms.hpp>
 #include <Simulation.hpp>
+#include <Extensions.hpp>
 
 using namespace ig::core;
 using namespace ig::experiment;
@@ -106,6 +107,28 @@ BOOST_AUTO_TEST_SUITE( persistedPolicy )
     
     NullStateVisitor vnull;
     Simulation<DynamicPolicy, NullStateVisitor> sim(n, policy, vnull);
+    double mean = 0;
+    size_t N = 10000L;
+    for(size_t i = 0; i < N; ++i)
+    {
+      mean += sim.run(B);
+    }
+    mean /= N*1.0;
+    BOOST_CHECK_CLOSE(optValue, mean, 1);
+  }
+
+  BOOST_AUTO_TEST_CASE(testSimulationAccuraryForImpunc)
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.8/Pat12.rcp");
+
+    double optValue = 0;
+    DynamicPolicy policy;
+    DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+    
+    NullStateVisitor vnull;
+    Simulation<DynamicPolicy, NullStateVisitor, true> sim(n, policy, vnull);
     double mean = 0;
     size_t N = 10000L;
     for(size_t i = 0; i < N; ++i)

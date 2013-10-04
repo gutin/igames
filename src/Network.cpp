@@ -4,6 +4,8 @@
 #include <sstream>
 #include <iostream>
 #include <sstream>
+#include <cmath>
+#include <ctime>
 
 using namespace std;
 
@@ -74,6 +76,8 @@ bool Network::import(const std::string& file_, bool delaysFromFile_)
   std::string line;
   int count(0), activityName(0);
   double duration;
+  
+  std::srand(0);//deterministic stream of random nums
 
   vertex_t last;
   while(std::getline(ifs, line))
@@ -99,9 +103,10 @@ bool Network::import(const std::string& file_, bool delaysFromFile_)
           delayedDuration = 2*duration;
         }
         Task t((1/duration), (1/delayedDuration), activityName);
+        t._probDelaySuccess = std::rand() / double(RAND_MAX); 
         last = add(t);
         std::cout << "Adding task [" << last << "] with duration [" << duration << "]"
-                  << " delayedDuration [" << delayedDuration << "]" << std::endl;
+                  << " delayedDuration [" << delayedDuration << "]. Delay success prob [" << t._probDelaySuccess  << "]" << std::endl;
         if(count == 4) _start = last;
         ++activityName;
       }

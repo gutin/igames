@@ -4,6 +4,7 @@
 #include "Task.hpp"
 #include "DynamicAlgorithm.hpp"
 #include "PersistedPolicy.hpp"
+#include "Extensions.hpp"
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
@@ -36,8 +37,7 @@ int main(int ac_, char** av_)
     (SIZE_ARG_NAME, po::value<size_t>(), "Size of the network") 
     (BUDGET_ARG_NAME, po::value<size_t>(&budget), "Interdiction budget")
     (INSTANCE_ARG_NAME, po::value<size_t>(), "Instance number")
-    (ORDER_STRENGTH_ARG_NAME, po::value<double>(), "Order strength")
-    (RCPBASE_ARG_NAME, po::value<std::string>(), "Base directory with .rcp files")
+    ("impunc", "Version with implementation uncertainty?")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
     ("persist,P",po::value<std::string>(), "Persist to the given file")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
@@ -96,7 +96,11 @@ int main(int ac_, char** av_)
 
   
   double value = 0;
-  if(vm.count("persist"))
+  if(vm.count("impunc"))
+  {
+    value = DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalValue(n, budget);
+  }
+  else if(vm.count("persist"))
   {
     std::string file = vm["persist"].as<std::string>();
     std::cout << "Persisting policy to file: " << file.c_str() << std::endl;
