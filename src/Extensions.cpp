@@ -20,19 +20,20 @@ double ImplementationUncertaintyEvaluator::evaluate(const UDC& udc_,
   {
     return StandardEvaluator::evaluate(udc_, unet_, uv_, net_, state_, candidate_, totalRate_, budget_, fcode_, stmap_);
   }
-  double totalProb = 0;
   double value = 0;
+  const size_t currentTau = tau(udc_, state_, budget_);
   for(size_t oc = 0; oc < (1L << candidate_->size()); ++oc)
   {
     double outcomeProb = 1;
-    State next = state_;
+                          
+    size_t nextTau = currentTau;
     size_t count = 0;
     BOOST_FOREACH(vertex_t t, *candidate_)
     {
       if(oc & (1L << count))
       {
         outcomeProb *= TASK_ATTR(t, _probDelaySuccess);
-        next._interdicted.insert(t);
+        nextTau &= ~(1L << udc_._activity2UDCIndex[t]);
       }
       else
       {
@@ -41,12 +42,11 @@ double ImplementationUncertaintyEvaluator::evaluate(const UDC& udc_,
       ++count;
 
     }
-    next._res -= candidate_->size();
-    totalProb += outcomeProb;
-    size_t tav = tau(udc_, next, budget_);
-    value += udc_.value(tav) * outcomeProb;
+    // clear the budget bits in the tau value
+    nextTau ^= (1L << (2*udc_.size())) * (budget_ - state_._res);
+    nextTau |= (1L << (2*udc_.size())) * (budget_ - state_._res + count);
+    value += udc_.value(nextTau) * outcomeProb;
   }
-  assert(std::abs(totalProb - 1) < 1e-6);
   return value;
 }
 
