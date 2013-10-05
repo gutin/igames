@@ -15,9 +15,9 @@ Installation:
 Note: only targets unix atm ...
 Also a little hacky but should work out for you. 
 
-1.You need to create a directory caleld 'install' which should be a sibling directory of 'src'. You can override this default install directory with the Make variable INSTALL_DIR.
-2. make -C src
-3. Installed binaries and static libraries (if all goes well) should end up in install directory
+- You need to create a directory caleld 'install' which should be a sibling directory of 'src'. You can override this default install directory with the Make variable INSTALL_DIR.
+- make -C src
+- Installed binaries and static libraries (if all goes well) should end up in install directory
 
 Any questions? Email gutineli@gmail.com.
 
