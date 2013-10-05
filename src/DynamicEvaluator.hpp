@@ -22,6 +22,14 @@ protected:
                          const Policy& policy_,
                          const StateSharedPtr& statePtr_,
                          const OrderedTaskSet& finished_) const;
+
+  template <class Policy>
+  double evaluateInStateImplBase(const Network& net_,
+                                 const StateSharedPtr& statePtr_,
+                                 const ActionSharedPtr& actionPtr_,
+                                 const OrderedTaskSet& vicitms_,
+                                 const Policy& policy_,
+                                 const OrderedTaskSet& finished_) const;
   mutable ValueCache _vcache;
 };
 
@@ -37,6 +45,17 @@ public:
                              const OrderedTaskSet& finished_) const;
 };
 
+class ImplUncertaintyEvaluator : public DynamicEvaluatorT<ImplUncertaintyEvaluator>
+{
+public:
+  template <class Policy>
+  double evaluateInStateImpl(const Network& net_,
+                             const StateSharedPtr& statePtr_,
+                             const ActionSharedPtr& actionPtr_,
+                             const OrderedTaskSet& vicitms_,
+                             const Policy& policy_,
+                             const OrderedTaskSet& finished_) const;
+};
 
 }}
 

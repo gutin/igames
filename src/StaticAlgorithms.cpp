@@ -169,6 +169,12 @@ ActionSharedPtr StaticPolicy::at(const State& state_) const
       ret->erase(u);
     }
   }
+  // This bit is only really necessary for things like implementation ucertainty
+  // where the static strategy fails to see what is going on
+  while(ret->size() > state_._res)
+  {
+    ret->erase(ret->begin());
+  }
   return ret;
 }
 
@@ -191,7 +197,7 @@ std::string StaticPolicy::asString() const
 }
 
 // Work out a static policy from a determinsitic algorithm
-double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_)
+double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_, bool impunc_)
 {
   // Use a solver to get the optimal deterministic policy
   IloEnv env;
@@ -291,6 +297,11 @@ double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& po
     IloExpr bound(env), bound2(env);
     bound += M * theta[*vi];
     double advantage = net_.graph()[*vi].expDelayed() - net_.graph()[*vi].expNormal();
+    if(impunc_)
+    {
+      // S
+      advantage *= TASK_ATTR(*vi, _probDelaySuccess);
+    }
     if(advantage <= 0 && !net_.isEnd(*vi) && !net_.isStart(*vi))
       std::cout << "Warning.. no advantage to interdicting " << *vi << std::endl;
 

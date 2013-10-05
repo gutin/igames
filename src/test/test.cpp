@@ -34,6 +34,23 @@ BOOST_AUTO_TEST_SUITE( standardAlgorithm )
     BOOST_CHECK_CLOSE(optValue, workedOutVal, 1e-05);
   }
 
+  // Make sure the optimal value and the value of 
+  // the optimal policy worked out are equal
+  BOOST_AUTO_TEST_CASE( kulkarniResultAndOptimalValueMustMatchForImplUnc )
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.8/Pat12.rcp");
+    
+    double optValue = 0;
+    DynamicPolicy policy;
+    DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+
+    double workedOutVal = ImplUncertaintyEvaluator().evaluate(n, B, policy);
+
+    BOOST_CHECK_CLOSE(optValue, workedOutVal, 1e-05);
+  }
+
   BOOST_AUTO_TEST_CASE( dataQuality )
   {
     Network n;
@@ -70,6 +87,33 @@ BOOST_AUTO_TEST_SUITE( staticStochasticAlgorithm )
     double actVal = deterministicPolicy(n, B, staticPolicy);
     BOOST_REQUIRE_EQUAL(54, actVal);
     BOOST_REQUIRE_EQUAL(3, staticPolicy._targets.size());
+  }
+
+  // Test the deterministic algorithm for impunc
+  BOOST_AUTO_TEST_CASE( deterministicMILPForImpunc )
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.8/Pat12.rcp");
+    
+    StaticPolicy staticPolicy;
+    double actVal = deterministicPolicy(n, B, staticPolicy, true);
+    BOOST_REQUIRE_EQUAL(B, staticPolicy._targets.size());
+
+    std::cout << "Working out the exact mean of the Impunc static policy" << std::endl;
+    double simulatedVal = ImplUncertaintyEvaluator().evaluate(n, B, staticPolicy);
+
+    /*NullStateVisitor vnull;
+    Simulation<StaticPolicy, NullStateVisitor, true> sim(n, staticPolicy, vnull);
+    double mean = 0;
+    size_t N = 10000L;
+    for(size_t i = 0; i < N; ++i)
+    {
+      mean += sim.run(B);
+    }
+    mean /= N*1.0;
+
+    BOOST_CHECK_CLOSE(simulatedVal, mean, 1);*/
   }
 BOOST_AUTO_TEST_SUITE_END()
 

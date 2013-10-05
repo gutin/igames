@@ -45,7 +45,6 @@ DynamicEvaluatorT<Evaluator>::evaluateInState(const Network& net_,
                                                                policy_,
                                                                finished_);
 }
-
 template <class Policy>
 double 
 StandardDynamicEvaluator::evaluateInStateImpl(const Network& net_,
@@ -54,6 +53,19 @@ StandardDynamicEvaluator::evaluateInStateImpl(const Network& net_,
                                               const OrderedTaskSet& victims_,
                                               const Policy& policy_,
                                               const OrderedTaskSet& finished_) const 
+{
+  return evaluateInStateImplBase(net_, statePtr_, actionPtr_, victims_, policy_, finished_); 
+}
+
+template <class Evaluator>
+template <class Policy>
+double 
+DynamicEvaluatorT<Evaluator>::evaluateInStateImplBase(const Network& net_,
+                                                      const StateSharedPtr& statePtr_,
+                                                      const ActionSharedPtr& actionPtr_,
+                                                      const OrderedTaskSet& victims_,
+                                                      const Policy& policy_,
+                                                      const OrderedTaskSet& finished_) const 
 {
   double secondTerm = 0, totalRate = 0;
   BOOST_FOREACH(vertex_t u, statePtr_->_active)
@@ -68,6 +80,46 @@ StandardDynamicEvaluator::evaluateInStateImpl(const Network& net_,
     secondTerm += rate * evaluateInState(net_, policy_, nextStatePtr, newFinished);
   }
   return (1 + secondTerm) / totalRate;
+}
+
+template <class Policy>
+double 
+ImplUncertaintyEvaluator::evaluateInStateImpl(const Network& net_,
+                                              const StateSharedPtr& statePtr_,
+                                              const ActionSharedPtr& actionPtr_,
+                                              const OrderedTaskSet& victims_,
+                                              const Policy& policy_,
+                                              const OrderedTaskSet& finished_) const 
+{
+  if(actionPtr_ && !actionPtr_->empty())
+  {
+    double overallValue = 0;
+    for(size_t outcome = 0; outcome < (1L << actionPtr_->size()); ++outcome)
+    {
+      double outcomeProb = 1;
+      StateSharedPtr nextStatePtr(new State(*statePtr_));
+      size_t count = 0;
+      BOOST_FOREACH(vertex_t t, *actionPtr_)
+      {
+        if((1L << count) & outcome == 1)
+        {
+          nextStatePtr->_interdicted.insert(t);
+          outcomeProb *= TASK_ATTR(t, _probDelaySuccess);
+        }
+        else
+        {
+          outcomeProb *= 1 - TASK_ATTR(t, _probDelaySuccess);
+        }
+        ++count;
+      }
+      nextStatePtr->_res -= actionPtr_->size();
+      assert(nextStatePtr->_res >= 0);
+      OrderedTaskSet newFinished = finished_;
+      overallValue += outcomeProb * evaluateInState(net_, policy_, nextStatePtr, newFinished);
+    }
+    return overallValue;
+  }
+  return  evaluateInStateImplBase(net_, statePtr_, actionPtr_, victims_, policy_, finished_);
 }
 
 }}
