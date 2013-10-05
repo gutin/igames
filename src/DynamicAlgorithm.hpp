@@ -9,6 +9,8 @@
 
 #include <boost/progress.hpp>
 
+#include <iterator>
+
 namespace ig { namespace core {
 
 struct StateTemplate
@@ -174,7 +176,10 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
   UDC& udc = unet_[*uPtr_];
   size_t maxFCode = (1L << udc.size()) - 2;
   std::cout << "Starting with a maximum finish code of " << maxFCode 
-            << " for UDC " << net_.asString(udc._tasks) << std::endl;
+            << " for UDC [ ";
+  std::copy(udc._tasks.begin(), udc._tasks.end(),
+            std::ostream_iterator<vertex_t>(std::cout, " "));
+  std::cout << "]" << std::endl;
   
   size_t N = udc.size();
   for(size_t y = 0; y <= budget_; ++y)

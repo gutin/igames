@@ -35,7 +35,6 @@ HEURISTICS_BIN = $(INSTALL_DIR)/heuristic
 EXP_BIN = $(INSTALL_DIR)/psample
 
 LIB_SRCS = Network.cpp \
-          Task.cpp \
           UDCNetwork.cpp \
           State.cpp \
           PersistedPolicy.cpp \

@@ -86,8 +86,12 @@ public:
   template <class VertexOrEdge>
   void operator()(std::ostream& out_, const VertexOrEdge& v_) const 
   {
-    out_ << "[label=\"(" << _net.asString(_unet._ug[v_]._tasks) << ", "
-         << _unet._ug[v_].rank() << ")\"]";
+    out_ << "[label=\"([ ";
+    BOOST_FOREACH(vertex_t t, _unet._ug[v_]._tasks)
+    {
+      out_ << t << " ";
+    }
+    out_ << "], " << _unet._ug[v_].rank() << ")\"]";
   }
 private:
   const Network& _net; 

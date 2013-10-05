@@ -58,7 +58,14 @@ StateSharedPtr nextState(const Network& net_,
           const State& state_,
           const ActionSharedPtr& actionPtr_,
           const OrderedTaskSet& finished_,
-          vertex_t u_);
+          const vertex_t u_);
+
+StateSharedPtr nextState(const Network& net_,
+          const State& state_,
+          const ActionSharedPtr& actionPtr_,
+          const OrderedTaskSet& finished_,
+          const vertex_t u_,
+          size_t constIncurred_);
 
 inline bool isTerminalState(const Network net_, const State& state_)
 {

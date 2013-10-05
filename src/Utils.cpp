@@ -8,7 +8,18 @@ nextState(const Network& net_,
           const State& state_,
           const ActionSharedPtr& actionPtr_,
           const OrderedTaskSet& finished_,
-          vertex_t u_)
+          const vertex_t u_)
+{
+  return nextState(net_, state_, actionPtr_, finished_, u_, actionPtr_->size());
+}
+
+StateSharedPtr 
+nextState(const Network& net_,
+          const State& state_,
+          const ActionSharedPtr& actionPtr_,
+          const OrderedTaskSet& finished_,
+          const vertex_t u_,
+          const size_t costIncurred_)
 {
   assert(actionPtr_->size() <= state_._res);
 
@@ -16,7 +27,7 @@ nextState(const Network& net_,
   ret->addInterdictedSet(*actionPtr_);
   ret->_active.erase(u_);
   ret->_interdicted.erase(u_);
-  ret->_res -= actionPtr_->size();
+  ret->_res -= costIncurred_;
   ret->_dormant.insert(u_);
 
   // These tasks have now finished
