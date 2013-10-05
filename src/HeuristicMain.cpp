@@ -106,6 +106,7 @@ int main(int ac_, char** av_)
     if(impunc)
     {
       //USe an explicit Kulkarni solver to get the right value
+      value = ImplUncertaintyEvaluator().evaluate(n, budget, policy);
     }
     else
     {
