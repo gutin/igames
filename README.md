@@ -1,4 +1,4 @@
-Interidction games implementation
+Interdiction games implementation
 =================================
 
 Based on http://www.optimization-online.org/DB_HTML/2013/04/3830.html
