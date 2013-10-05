@@ -1,5 +1,6 @@
 #include "PersistedPolicy.hpp"
 #include <cstring>
+#include <list>
 
 namespace {
   const int BUFFER_SIZE = 512;
@@ -9,21 +10,53 @@ namespace ig { namespace core {
 
 ActionSharedPtr PersistedPolicy::at(const State& state_) const
 {
+  //TODO: clean this up.. also inefficient (temporary workaround)
+  StateSharedPtr statePtr(new State(state_));
+  return at(statePtr);
+}
+
+ActionSharedPtr PersistedPolicy::at(const StateSharedPtr& statePtr_) const
+{
+  boost::unordered_map<StateSharedPtr, ActionSharedPtr>::iterator it;
+  if((it = _cache.find(statePtr_)) != _cache.end())
+  {
+    std::cout << "Cache hit!" << std::endl;
+    return it->second;
+  }
   ActionSharedPtr ret(new Action);
   _input.seekg(0, std::ios::end);
   size_t length = _input.tellg();
   _input.seekg(0, std::ios::beg);
+  std::list<StateSharedPtr> stateWindow(MAX_CACHE_SIZE);
+  std::list<ActionSharedPtr> actionWindow(MAX_CACHE_SIZE);
   for(size_t pos = 0; pos < length; pos += 1 +  _net.size())
   {
-    State s;
-    readState(s, ret);
-    if(s == state_)
+    StateSharedPtr sPtr(new State);
+    readState(*sPtr, ret);
+    if(stateWindow.size() >= MAX_CACHE_SIZE)
     {
+      stateWindow.pop_front();
+    }
+    stateWindow.push_back(sPtr);
+    if(actionWindow.size() >= MAX_CACHE_SIZE)
+    {
+      actionWindow.pop_front();
+    }
+    actionWindow.push_back(ret);
+    if(*sPtr == *statePtr_)
+    {
+      _cache.clear();
+      while(!stateWindow.empty())
+      {
+        _cache[stateWindow.front()] = actionWindow.front();
+        stateWindow.pop_front();
+        actionWindow.pop_front();
+      }
       return ret;
     }
     ret->clear();
   }
-  std::cout << "Failed to find decision in state " << state_.asString() << std::endl;
+  std::cout << "Failed to find decision in state " << statePtr_->asString() << std::endl;
   abort();
 }
 

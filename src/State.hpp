@@ -46,8 +46,26 @@ struct StateSharedPtrHash : std::unary_function<StateSharedPtr, size_t>
 {
   size_t operator() (const StateSharedPtr& statePtr_) const 
   {
+    if(!statePtr_) return 0;
     return StateHash()(*statePtr_);
   }
+};
+
+struct StateSharedPtrEquivalence : std::binary_function<StateSharedPtr, StateSharedPtr, bool>
+{
+  //Two statesharedptr are considered equivalent if their underlying states are
+  bool operator() (const StateSharedPtr& one_, const StateSharedPtr& other_) const
+  {
+    if(!one_) return !other_;
+    if(!other_) return !one_;
+    return *one_ == *other_;   
+  }
+};
+
+template <class Value>
+struct StateSharedPtrMap
+{
+  typedef boost::unordered_map<StateSharedPtr, Value, StateSharedPtrHash, StateSharedPtrEquivalence> type;
 };
 
 }}
