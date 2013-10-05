@@ -12,7 +12,8 @@ double ImplementationUncertaintyEvaluator::evaluate(const UDC& udc_,
                                   double totalRate_, size_t budget_,
                                   size_t fcode_, StateTemplateMap& stmap_)
 {
-  if(util::isTerminalState(net_, state_))
+  if(state_._active.find(net_.end()) != state_._active.end() ||
+     state_._dormant.find(net_.end()) != state_._dormant.end())
   {
     return 0;
   }
