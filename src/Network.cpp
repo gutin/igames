@@ -1,5 +1,9 @@
 #include "Network.hpp"
 
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/mersenne_twister.hpp>
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -72,13 +76,19 @@ Network::Network()
 
 bool Network::import(const std::string& file_, bool delaysFromFile_)
 {
+  //setup the rng for a deterministic stream of 'random' numbers. we do this for reproducebility
+  boost::mt19937 randomGenerator(0);
+  boost::uniform_real<> interdictionSuccessDistro;
+  interdictionSuccessDistro(randomGenerator);
+  boost::variate_generator<boost::mt19937&,
+                           boost::uniform_real<>
+                           > probDelaySuccessGenerator(randomGenerator, interdictionSuccessDistro);
+
   std::ifstream ifs(file_.c_str(), std::ifstream::in);
   std::string line;
   int count(0), activityName(0);
   double duration;
   
-  std::srand(0);//deterministic stream of random nums
-
   vertex_t last;
   while(std::getline(ifs, line))
   {
@@ -102,7 +112,7 @@ bool Network::import(const std::string& file_, bool delaysFromFile_)
           // if we dont take from the file the default is to double the delayedDuration
           delayedDuration = 2*duration;
         }
-        last = add(1/duration, 1/delayedDuration, /*double(std::rand()) / double(RAND_MAX)*/0.5);
+        last = add(1/duration, 1/delayedDuration, probDelaySuccessGenerator());
         std::cout << "Adding task [" << last << "] with duration [" << _g[last].expNormal() << "]"
                   << " delayedDuration [" << _g[last].expDelayed() << "]. Delay success prob [" << _g[last]._probDelaySuccess  << "]" << std::endl;
         if(count == 4) _start = last;
