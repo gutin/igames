@@ -71,7 +71,6 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
   {
     residualCost += TASK_ATTR(t, _crashingCost);
   }
-  std::cout << "Residucal cost in state " << state_.asString() << " is " << residualCost << std::endl;
   double minValue = std::numeric_limits<double>::max();
   BOOST_FOREACH(vertex_t t, state_._active)
   {
