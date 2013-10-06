@@ -31,7 +31,7 @@ struct StandardEvaluator
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,
-                  size_t fcode, StateTemplateMap& stmap);  
+                  size_t fcode, StateTemplateMap& stmap) const;  
 };
 
 typedef boost::unordered_map<State, ActionSharedPtr, StateHash> DynamicPolicy;
@@ -41,10 +41,10 @@ class FastTraverserT
 {
 public:
   template <class DSP>
-  double execute(const Network& net_, size_t budget_, DSP& storagePolicy_); 
+  double execute(const Network& net_, size_t budget_, DSP& storagePolicy_) const; 
 private:
   template<class DecisionStoragePolicy>
-  size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&);
+  size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&) const;
 };
 
 template<class StateEvaluator = StandardEvaluator>
@@ -52,23 +52,23 @@ class DynamicAlgorithm : public FastTraverserT<DynamicAlgorithm<StateEvaluator> 
 {
 public:
   void optimalPolicyAndValue(const Network& network_, size_t budget_,
-                DynamicPolicy& optimalPolicy_, double& optimalValue_);
-  double optimalValue(const Network& network_, size_t budget_);
+                DynamicPolicy& optimalPolicy_, double& optimalValue_) const;
+  double optimalValue(const Network& network_, size_t budget_) const;
   
   DynamicAlgorithm() : _stateEvalPtr(new StateEvaluator) {}
   DynamicAlgorithm(const boost::shared_ptr<StateEvaluator>& stateEvalPtr_) : _stateEvalPtr(stateEvalPtr_) {}
   
   template <class DSP>
   double visitState(const Network net_, 
-                                        size_t budget_,
-                                        const UDCNetwork& unet_,
-                                        const UDC& udc_,
-                                        vertex_i uPtr_,
-                                        const State& s,
-                                        const OrderedTaskSet& active, 
-                                        int fcode,
-                                        StateTemplateMap& stmap,
-                                        DSP& storagePolicy_);
+                    size_t budget_,
+                    const UDCNetwork& unet_,
+                    const UDC& udc_,
+                    vertex_i uPtr_,
+                    const State& s,
+                    const OrderedTaskSet& active, 
+                    int fcode,
+                    StateTemplateMap& stmap,
+                    DSP& storagePolicy_) const;
 private:
   const boost::shared_ptr<StateEvaluator> _stateEvalPtr;
 };
@@ -124,14 +124,14 @@ inline size_t tau(const UDC& udc_,
 
 template <class SE>
 void DynamicAlgorithm<SE>::optimalPolicyAndValue(const Network& network_, size_t budget_,
-                DynamicPolicy& optimalPolicy_, double& optimalValue_) 
+                DynamicPolicy& optimalPolicy_, double& optimalValue_) const 
 {
   DecisionStorageInMemory dsm(optimalPolicy_);
   optimalValue_ = this->execute(network_, budget_, dsm);
 }
 
 template <class SE>
-double DynamicAlgorithm<SE>::optimalValue(const Network& network_, size_t budget_)
+double DynamicAlgorithm<SE>::optimalValue(const Network& network_, size_t budget_) const
 {
   NoDecisionStorage noStorage;
   return this->execute(network_, budget_, noStorage);
@@ -141,7 +141,7 @@ template<class T>
 template<class DSP>
 double FastTraverserT<T>::execute(const Network& net_,
                                    size_t budget_,
-                                   DSP& storagePolicy_)
+                                   DSP& storagePolicy_) const
 {
   UDCNetwork unet(net_);
   size_t numUDCs = unet.size();
@@ -189,7 +189,7 @@ size_t FastTraverserT<T>::solveUDC(vertex_i uPtr_,
                                  UDCNetwork& unet_,
                                  const Network& net_,
                                  size_t budget_,
-                                 DSP& storagePolicy_)
+                                 DSP& storagePolicy_) const
 {
   StateTemplateMap stmap;
   size_t stateCount(0);
@@ -296,7 +296,7 @@ size_t FastTraverserT<T>::solveUDC(vertex_i uPtr_,
         tau |= (1L << N) * fcode;
         tau |= realActiveCode;
         
-        double value = (static_cast<T*>(this))->visitState(net_, budget_, unet_, udc, uPtr_, s, active, fcode, stmap, storagePolicy_);
+        double value = (static_cast<const T*>(this))->visitState(net_, budget_, unet_, udc, uPtr_, s, active, fcode, stmap, storagePolicy_);
         udc.store(tau, value);
       }
     }
@@ -315,7 +315,7 @@ double DynamicAlgorithm<SE>::visitState(const Network net_,
                                         const OrderedTaskSet& active, 
                                         int fcode,
                                         StateTemplateMap& stmap,
-                                        DSP& storagePolicy_)
+                                        DSP& storagePolicy_) const
 {
   double maxVal = 0;
   ActionSharedPtr bestAction;
@@ -462,7 +462,7 @@ double StandardEvaluator::evaluate(const UDC& udc_,
                                   const State& state_,
                                   const ActionSharedPtr& candidate_,
                                   double totalRate_, size_t budget_,
-                                  size_t fcode_, StateTemplateMap& stmap_)
+                                  size_t fcode_, StateTemplateMap& stmap_) const
 {
   double value = 0;
   if(state_._active.find(net_.end()) != state_._active.end() ||

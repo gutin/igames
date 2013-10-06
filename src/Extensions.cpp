@@ -11,7 +11,7 @@ double ImplementationUncertaintyEvaluator::evaluate(const UDC& udc_,
                                   const State& state_,
                                   const ActionSharedPtr& candidate_,
                                   double totalRate_, size_t budget_,
-                                  size_t fcode_, StateTemplateMap& stmap_)
+                                  size_t fcode_, StateTemplateMap& stmap_) const
 {
   if(state_._active.find(net_.end()) != state_._active.end() ||
      state_._dormant.find(net_.end()) != state_._dormant.end())
@@ -59,7 +59,7 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
                                   const State& state_,
                                   const ActionSharedPtr& candidate_,
                                   double totalRate_, size_t budget_,
-                                  size_t fcode_, StateTemplateMap& stmap_)
+                                  size_t fcode_, StateTemplateMap& stmap_) const
 {
   if(state_._active.find(net_.end()) != state_._active.end() ||
      state_._dormant.find(net_.end()) != state_._dormant.end())

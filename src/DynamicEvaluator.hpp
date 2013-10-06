@@ -82,7 +82,7 @@ class FastEvaluator : public FastTraverserT<FastEvaluator<PolicyType, StateEvalu
 public:
   FastEvaluator(const PolicyType& policy_) : _policy(policy_) {}
 
-  double evaluate(const Network& net_, size_t budget_)
+  double evaluate(const Network& net_, size_t budget_) const
   {
     NoDecisionStorage dsp;
     return this->execute(net_, budget_, dsp); 
@@ -98,7 +98,7 @@ public:
                                         const OrderedTaskSet& active, 
                                         int fcode,
                                         StateTemplateMap& stmap,
-                                        DSP& storagePolicy_);
+                                        DSP& storagePolicy_) const;
 private:
   const PolicyType& _policy;
 

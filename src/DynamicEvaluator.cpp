@@ -133,7 +133,7 @@ double FastEvaluator<PT,SE>::visitState(const Network net_,
                                         const OrderedTaskSet& active, 
                                         int fcode,
                                         StateTemplateMap& stmap,
-                                        DSP& storagePolicy_)
+                                        DSP& storagePolicy_) const
 {
   ActionSharedPtr actionPtr = _policy.at(s);
 

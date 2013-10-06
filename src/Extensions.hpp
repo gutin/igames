@@ -11,7 +11,7 @@ struct ImplementationUncertaintyEvaluator
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,
-                  size_t fcode, StateTemplateMap& stmap);  
+                  size_t fcode, StateTemplateMap& stmap) const;  
 
   StandardEvaluator _stdEval;
 };
@@ -22,7 +22,7 @@ struct CrashingEvaluator
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,
-                  size_t fcode, StateTemplateMap& stmap);  
+                  size_t fcode, StateTemplateMap& stmap) const;  
 };
 
 }}
