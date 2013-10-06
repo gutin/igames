@@ -59,47 +59,19 @@ public:
 };
 
 template <class PolicyType, class StateEvaluator>
-class FastEvaluation
-{
-public:
-  FastEvaluation(const PolicyType& policy_) :
-    _policy(policy_) {}
-
-  double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
-                  const Network& net_, 
-                  const State& s, const ActionSharedPtr& candidate,
-                  double totalRate, size_t budget_,
-                  size_t fcode, StateTemplateMap& stmap);  
-private:
-  const PolicyType& _policy;
-
-  StateEvaluator _stateEval;
-};
-
-template <class PolicyType, class StateEvaluator>
-class FastEvaluator : public FastTraverserT<FastEvaluator<PolicyType, StateEvaluator> >
+class FastEvaluator 
 {
 public:
   FastEvaluator(const PolicyType& policy_) : _policy(policy_) {}
 
-  double evaluate(const Network& net_, size_t budget_) const
-  {
-    NoDecisionStorage dsp;
-    return this->execute(net_, budget_, dsp); 
-  }
 
-  template <class DSP>
-  double visitState(const Network net_, 
-                                        size_t budget_,
-                                        const UDCNetwork& unet_,
-                                        const UDC& udc_,
-                                        vertex_i uPtr_,
-                                        const State& s,
-                                        const OrderedTaskSet& active, 
-                                        int fcode,
-                                        StateTemplateMap& stmap,
-                                        DSP& storagePolicy_) const;
+  double evaluate(const Network& net_, size_t budget_) const;
 private:
+  size_t solveUDC(vertex_i uPtr_, 
+                  UDCNetwork& unet_,
+                  const Network& net_,
+                  size_t budget_) const;
+
   const PolicyType& _policy;
 
   StateEvaluator _stateEval;

@@ -36,41 +36,21 @@ struct StandardEvaluator
 
 typedef boost::unordered_map<State, ActionSharedPtr, StateHash> DynamicPolicy;
 
-template <class Traverser>
-class FastTraverserT 
-{
-public:
-  template <class DSP>
-  double execute(const Network& net_, size_t budget_, DSP& storagePolicy_) const; 
-private:
-  template<class DecisionStoragePolicy>
-  size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&) const;
-};
-
 template<class StateEvaluator = StandardEvaluator>
-class DynamicAlgorithm : public FastTraverserT<DynamicAlgorithm<StateEvaluator> >
+class DynamicAlgorithm 
 {
 public:
   void optimalPolicyAndValue(const Network& network_, size_t budget_,
                 DynamicPolicy& optimalPolicy_, double& optimalValue_) const;
   double optimalValue(const Network& network_, size_t budget_) const;
   
-  DynamicAlgorithm() : _stateEvalPtr(new StateEvaluator) {}
-  DynamicAlgorithm(const boost::shared_ptr<StateEvaluator>& stateEvalPtr_) : _stateEvalPtr(stateEvalPtr_) {}
-  
   template <class DSP>
-  double visitState(const Network net_, 
-                    size_t budget_,
-                    const UDCNetwork& unet_,
-                    const UDC& udc_,
-                    vertex_i uPtr_,
-                    const State& s,
-                    const OrderedTaskSet& active, 
-                    int fcode,
-                    StateTemplateMap& stmap,
-                    DSP& storagePolicy_) const;
+  double execute(const Network& net_, size_t budget_, DSP& storagePolicy_) const; 
+
+  template<class DecisionStoragePolicy>
+  size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&) const;
 private:
-  const boost::shared_ptr<StateEvaluator> _stateEvalPtr;
+  StateEvaluator _stateEval;
 };
 
 struct NoDecisionStorage
@@ -137,11 +117,11 @@ double DynamicAlgorithm<SE>::optimalValue(const Network& network_, size_t budget
   return this->execute(network_, budget_, noStorage);
 }
 
-template<class T>
+template<class SE>
 template<class DSP>
-double FastTraverserT<T>::execute(const Network& net_,
-                                   size_t budget_,
-                                   DSP& storagePolicy_) const
+double DynamicAlgorithm<SE>::execute(const Network& net_,
+                                     size_t budget_,
+                                     DSP& storagePolicy_) const
 {
   UDCNetwork unet(net_);
   size_t numUDCs = unet.size();
@@ -185,7 +165,7 @@ double FastTraverserT<T>::execute(const Network& net_,
 
 template<class T>
 template<class DSP>
-size_t FastTraverserT<T>::solveUDC(vertex_i uPtr_, 
+size_t DynamicAlgorithm<T>::solveUDC(vertex_i uPtr_, 
                                  UDCNetwork& unet_,
                                  const Network& net_,
                                  size_t budget_,
@@ -296,67 +276,50 @@ size_t FastTraverserT<T>::solveUDC(vertex_i uPtr_,
         tau |= (1L << N) * fcode;
         tau |= realActiveCode;
         
-        double value = (static_cast<const T*>(this))->visitState(net_, budget_, unet_, udc, uPtr_, s, active, fcode, stmap, storagePolicy_);
-        udc.store(tau, value);
+        double maxVal = 0;
+        ActionSharedPtr bestAction;
+
+        TaskList intEligible(active.begin(), active.end());
+        for(size_t i = 0; i < (1L << intEligible.size()); ++i)
+        {
+          if(ig::core::util::numBitsSet(i) > s._res) continue;
+          ActionSharedPtr candidate(new Action); 
+          for(int b = 0; b < intEligible.size(); ++b)
+          {
+            if(((i >> b) & 1) == 1)
+            {
+              candidate->insert(intEligible[b]);
+            }
+          }
+
+          if(candidate->size() > s._res)
+          {
+            std::cout << "Invalid action sleected!" << std::endl;
+            abort();
+          }
+          double totalRate = 0;
+          BOOST_FOREACH(vertex_t v, s._active)
+          {
+            totalRate += util::rate(v, net_, s, candidate);
+          }
+          
+          double val = _stateEval.evaluate(udc, unet_, *uPtr_, net_, 
+                                    s, candidate,
+                                    totalRate, budget_,
+                                    fcode, stmap);  
+          if(val > maxVal)
+          {
+            maxVal = val;
+            bestAction = candidate;
+          }
+        }
+
+        storagePolicy_(s, bestAction);
+        udc.store(tau, maxVal);
       }
     }
   }
   return stateCount;
-}
-
-template <class SE>
-template <class DSP>
-double DynamicAlgorithm<SE>::visitState(const Network net_, 
-                                        size_t budget_,
-                                        const UDCNetwork& unet_,
-                                        const UDC& udc_,
-                                        vertex_i uPtr_,
-                                        const State& s,
-                                        const OrderedTaskSet& active, 
-                                        int fcode,
-                                        StateTemplateMap& stmap,
-                                        DSP& storagePolicy_) const
-{
-  double maxVal = 0;
-  ActionSharedPtr bestAction;
-
-  TaskList intEligible(active.begin(), active.end());
-  for(size_t i = 0; i < (1L << intEligible.size()); ++i)
-  {
-    if(ig::core::util::numBitsSet(i) > s._res) continue;
-    ActionSharedPtr candidate(new Action); 
-    for(int b = 0; b < intEligible.size(); ++b)
-    {
-      if(((i >> b) & 1) == 1)
-      {
-        candidate->insert(intEligible[b]);
-      }
-    }
-
-    if(candidate->size() > s._res)
-    {
-      std::cout << "Invalid action sleected!" << std::endl;
-      abort();
-    }
-    double totalRate = 0;
-    BOOST_FOREACH(vertex_t v, s._active)
-    {
-      totalRate += util::rate(v, net_, s, candidate);
-    }
-    
-    double val = _stateEvalPtr->evaluate(udc_, unet_, *uPtr_, net_, 
-                              s, candidate,
-                              totalRate, budget_,
-                              fcode, stmap);  
-    if(val > maxVal)
-    {
-      maxVal = val;
-      bestAction = candidate;
-    }
-  }
-
-  storagePolicy_(s, bestAction);
-  return maxVal;
 }
 
 inline
