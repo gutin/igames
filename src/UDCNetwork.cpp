@@ -14,18 +14,6 @@ using namespace boost;
 
 namespace 
 {
-  /*struct taskComparator 
-  {
-    taskComparator(const ig::core::DirectedGraph& g_) : _g(g_) {}
-
-    bool operator() (const ig::core::vertex_t& u_, const ig::core::vertex_t& v_) const
-    {
-      return _g[u_].index() < _g[v_].index();
-    }
-
-    const ig::core::DirectedGraph& _g;
-  };*/
-
   using ig::core::UDC;
   using ig::core::vertex_t;
 
@@ -44,6 +32,7 @@ namespace
 namespace ig { namespace core {
 
 UDCNetwork::UDCNetwork(const Network& net_)
+  : _maxParallel(0)
 {
   DirectedGraph tcg;
   boost::transitive_closure(net_.graph(), tcg);
@@ -60,6 +49,7 @@ UDCNetwork::UDCNetwork(const Network& net_)
     }
     uvertex_t udc = boost::add_vertex(_ug);
     _ug[udc].init(ts, tcg);
+    _maxParallel = std::max(_maxParallel, ts.size());
   }
   
   uvertex_i vi, vi_end; 

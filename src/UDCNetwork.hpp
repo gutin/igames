@@ -56,6 +56,8 @@ public:
   explicit UDCNetwork(const Network&);
 
   size_t size() const { return boost::num_vertices(_ug); }
+  size_t _maxParallel;
+
   void sortedUDCs(UDCPtrs& ) const;
 
   UDC& operator[](uvertex_t u_) { return _ug[u_]; }
