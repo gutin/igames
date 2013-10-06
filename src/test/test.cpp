@@ -49,6 +49,17 @@ BOOST_AUTO_TEST_SUITE( standardAlgorithm )
     double workedOutVal = ImplUncertaintyEvaluator().evaluate(n, B, policy);
 
     BOOST_CHECK_CLOSE(optValue, workedOutVal, 1e-05);
+
+    // check an exact result
+    vertex_i vi, vi_end;
+    for(boost::tie(vi, vi_end) = boost::vertices(n.graph()); vi != vi_end; ++vi)
+    {
+      const_cast<Task&>(n.graph()[*vi])._probDelaySuccess = 0.2;
+    }
+    policy.clear();
+    DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+    BOOST_CHECK_CLOSE(40.3619, optValue, 1e-04);
+    BOOST_CHECK_CLOSE(40.3619, ImplUncertaintyEvaluator().evaluate(n,B,policy), 1e-04);
   }
 
   BOOST_AUTO_TEST_CASE( dataQuality )
@@ -103,7 +114,7 @@ BOOST_AUTO_TEST_SUITE( staticStochasticAlgorithm )
     std::cout << "Working out the exact mean of the Impunc static policy" << std::endl;
     double simulatedVal = ImplUncertaintyEvaluator().evaluate(n, B, staticPolicy);
 
-    /*NullStateVisitor vnull;
+    NullStateVisitor vnull;
     Simulation<StaticPolicy, NullStateVisitor, true> sim(n, staticPolicy, vnull);
     double mean = 0;
     size_t N = 10000L;
@@ -113,7 +124,7 @@ BOOST_AUTO_TEST_SUITE( staticStochasticAlgorithm )
     }
     mean /= N*1.0;
 
-    BOOST_CHECK_CLOSE(simulatedVal, mean, 1);*/
+    BOOST_CHECK_CLOSE(simulatedVal, mean, 1);
   }
 BOOST_AUTO_TEST_SUITE_END()
 

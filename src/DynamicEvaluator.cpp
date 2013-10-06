@@ -101,7 +101,7 @@ ImplUncertaintyEvaluator::evaluateInStateImpl(const Network& net_,
       size_t count = 0;
       BOOST_FOREACH(vertex_t t, *actionPtr_)
       {
-        if((1L << count) & outcome == 1)
+        if((1L << count) & outcome)
         {
           nextStatePtr->_interdicted.insert(t);
           outcomeProb *= TASK_ATTR(t, _probDelaySuccess);
