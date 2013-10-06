@@ -101,22 +101,22 @@ int main(int ac_, char** av_)
   double value = 0;
   if(vm.count("crash"))
   {
-    value = DynamicAlgorithm<CrashingEvaluator>::optimalValue(n, budget);
+    value = DynamicAlgorithm<CrashingEvaluator>().optimalValue(n, budget);
   }
   else if(vm.count("impunc"))
   {
-    value = DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalValue(n, budget);
+    value = DynamicAlgorithm<ImplementationUncertaintyEvaluator>().optimalValue(n, budget);
   }
   else if(vm.count("persist"))
   {
     std::string file = vm["persist"].as<std::string>();
     std::cout << "Persisting policy to file: " << file.c_str() << std::endl;
     PersistantStoragePolicy psp(file, n);
-    value = DynamicAlgorithm<StandardEvaluator>::execute(n, budget, psp); 
+    value = DynamicAlgorithm<StandardEvaluator>().execute(n, budget, psp); 
   }
   else
   {
-    value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, budget);
+    value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, budget);
   }
   std::cout << value << std::endl;
   return 0;

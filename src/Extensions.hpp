@@ -7,16 +7,18 @@ namespace ig { namespace core {
 
 struct ImplementationUncertaintyEvaluator
 {
-  static double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
+  double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,
                   size_t fcode, StateTemplateMap& stmap);  
+
+  StandardEvaluator _stdEval;
 };
 
 struct CrashingEvaluator
 {
-  static double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
+  double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,

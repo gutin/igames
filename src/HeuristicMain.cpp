@@ -3,6 +3,7 @@
 
 #include "Task.hpp"
 #include "StaticAlgorithms.hpp"
+#include "Extensions.hpp"
 #include "DynamicEvaluator.hpp"
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
@@ -106,7 +107,7 @@ int main(int ac_, char** av_)
     if(impunc)
     {
       //USe an explicit Kulkarni solver to get the right value
-      value = ImplUncertaintyEvaluator().evaluate(n, budget, policy);
+      value = FastEvaluator<StaticPolicy, ImplementationUncertaintyEvaluator>(policy).evaluate(n, budget);
     }
     else
     {
@@ -120,7 +121,7 @@ int main(int ac_, char** av_)
           const_cast<Task&>(n.graph()[*vi])._nu = n.graph()[*vi]._delta;
         }
       }
-      value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, 0);
+      value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, 0);
     }
   }
   else if(vm.count(STATIC_OPTION))

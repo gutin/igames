@@ -27,7 +27,7 @@ typedef std::map<size_t, StateTemplate> StateTemplateMap;
 struct StandardEvaluator
 {
 
-  static double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
+  double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,
@@ -36,21 +36,41 @@ struct StandardEvaluator
 
 typedef boost::unordered_map<State, ActionSharedPtr, StateHash> DynamicPolicy;
 
-template<class StateEvaluator = StandardEvaluator>
-class DynamicAlgorithm
+template <class Traverser>
+class FastTraverserT 
 {
 public:
-  static void optimalPolicyAndValue(const Network& network_, size_t budget_,
-                DynamicPolicy& optimalPolicy_, double& optimalValue_);
-  static double optimalValue(const Network& network_, size_t budget_);
-  
-  template<class DecisionStoragePolicy>
-  static double execute(const Network&,size_t,DecisionStoragePolicy&);
-
+  template <class DSP>
+  double execute(const Network& net_, size_t budget_, DSP& storagePolicy_); 
 private:
   template<class DecisionStoragePolicy>
-  static size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&);
+  size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&);
+};
 
+template<class StateEvaluator = StandardEvaluator>
+class DynamicAlgorithm : public FastTraverserT<DynamicAlgorithm<StateEvaluator> >
+{
+public:
+  void optimalPolicyAndValue(const Network& network_, size_t budget_,
+                DynamicPolicy& optimalPolicy_, double& optimalValue_);
+  double optimalValue(const Network& network_, size_t budget_);
+  
+  DynamicAlgorithm() : _stateEvalPtr(new StateEvaluator) {}
+  DynamicAlgorithm(const boost::shared_ptr<StateEvaluator>& stateEvalPtr_) : _stateEvalPtr(stateEvalPtr_) {}
+  
+  template <class DSP>
+  double visitState(const Network net_, 
+                                        size_t budget_,
+                                        const UDCNetwork& unet_,
+                                        const UDC& udc_,
+                                        vertex_i uPtr_,
+                                        const State& s,
+                                        const OrderedTaskSet& active, 
+                                        int fcode,
+                                        StateTemplateMap& stmap,
+                                        DSP& storagePolicy_);
+private:
+  const boost::shared_ptr<StateEvaluator> _stateEvalPtr;
 };
 
 struct NoDecisionStorage
@@ -107,19 +127,19 @@ void DynamicAlgorithm<SE>::optimalPolicyAndValue(const Network& network_, size_t
                 DynamicPolicy& optimalPolicy_, double& optimalValue_) 
 {
   DecisionStorageInMemory dsm(optimalPolicy_);
-  optimalValue_ = execute(network_, budget_, dsm);
+  optimalValue_ = this->execute(network_, budget_, dsm);
 }
 
 template <class SE>
 double DynamicAlgorithm<SE>::optimalValue(const Network& network_, size_t budget_)
 {
   NoDecisionStorage noStorage;
-  return execute(network_, budget_, noStorage);
+  return this->execute(network_, budget_, noStorage);
 }
 
-template<class SE>
+template<class T>
 template<class DSP>
-double DynamicAlgorithm<SE>::execute(const Network& net_,
+double FastTraverserT<T>::execute(const Network& net_,
                                    size_t budget_,
                                    DSP& storagePolicy_)
 {
@@ -163,9 +183,9 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
   return unet[*startUdc].value(tau(unet._ug[*startUdc], startingState, budget_));
 }
 
-template<class SE>
+template<class T>
 template<class DSP>
-size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_, 
+size_t FastTraverserT<T>::solveUDC(vertex_i uPtr_, 
                                  UDCNetwork& unet_,
                                  const Network& net_,
                                  size_t budget_,
@@ -275,54 +295,69 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
         size_t tau = (1L << 2 * N)  * (budget_ - y);
         tau |= (1L << N) * fcode;
         tau |= realActiveCode;
-
-        double maxVal = 0;
-        ActionSharedPtr bestAction;
-
-        TaskList intEligible(active.begin(), active.end());
-        for(size_t i = 0; i < (1L << intEligible.size()); ++i)
-        {
-          if(ig::core::util::numBitsSet(i) > y) continue;
-          ActionSharedPtr candidate(new Action); 
-          for(int b = 0; b < intEligible.size(); ++b)
-          {
-            if(((i >> b) & 1) == 1)
-            {
-              candidate->insert(intEligible[b]);
-            }
-          }
-
-          if(candidate->size() > y)
-          {
-            std::cout << "Invalid action sleected!" << std::endl;
-            abort();
-          }
-          double totalRate = 0;
-          BOOST_FOREACH(vertex_t v, s._active)
-          {
-            totalRate += util::rate(v, net_, s, candidate);
-          }
-          
-          double val = SE::evaluate(udc, unet_, *uPtr_, net_, 
-                                    s, candidate,
-                                    totalRate, budget_,
-                                    fcode, stmap);  
-          if(val > maxVal)
-          {
-            maxVal = val;
-            bestAction = candidate;
-          }
-        }
-
-        udc.store(tau, maxVal);
-        storagePolicy_(s, bestAction);
+        
+        double value = (static_cast<T*>(this))->visitState(net_, budget_, unet_, udc, uPtr_, s, active, fcode, stmap, storagePolicy_);
+        udc.store(tau, value);
       }
     }
   }
   return stateCount;
 }
 
+template <class SE>
+template <class DSP>
+double DynamicAlgorithm<SE>::visitState(const Network net_, 
+                                        size_t budget_,
+                                        const UDCNetwork& unet_,
+                                        const UDC& udc_,
+                                        vertex_i uPtr_,
+                                        const State& s,
+                                        const OrderedTaskSet& active, 
+                                        int fcode,
+                                        StateTemplateMap& stmap,
+                                        DSP& storagePolicy_)
+{
+  double maxVal = 0;
+  ActionSharedPtr bestAction;
 
+  TaskList intEligible(active.begin(), active.end());
+  for(size_t i = 0; i < (1L << intEligible.size()); ++i)
+  {
+    if(ig::core::util::numBitsSet(i) > s._res) continue;
+    ActionSharedPtr candidate(new Action); 
+    for(int b = 0; b < intEligible.size(); ++b)
+    {
+      if(((i >> b) & 1) == 1)
+      {
+        candidate->insert(intEligible[b]);
+      }
+    }
+
+    if(candidate->size() > s._res)
+    {
+      std::cout << "Invalid action sleected!" << std::endl;
+      abort();
+    }
+    double totalRate = 0;
+    BOOST_FOREACH(vertex_t v, s._active)
+    {
+      totalRate += util::rate(v, net_, s, candidate);
+    }
+    
+    double val = _stateEvalPtr->evaluate(udc_, unet_, *uPtr_, net_, 
+                              s, candidate,
+                              totalRate, budget_,
+                              fcode, stmap);  
+    if(val > maxVal)
+    {
+      maxVal = val;
+      bestAction = candidate;
+    }
+  }
+
+  storagePolicy_(s, bestAction);
+  return maxVal;
+}
 
 inline
 StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,

@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_SUITE( standardAlgorithm )
     
     double optValue = 0;
     DynamicPolicy policy;
-    DynamicAlgorithm<StandardEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+    DynamicAlgorithm<StandardEvaluator>().optimalPolicyAndValue(n, B, policy, optValue);
 
     double workedOutVal = StandardDynamicEvaluator().evaluate(n, B, policy);
 
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_SUITE( standardAlgorithm )
     
     double optValue = 0;
     DynamicPolicy policy;
-    DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+    DynamicAlgorithm<ImplementationUncertaintyEvaluator>().optimalPolicyAndValue(n, B, policy, optValue);
 
     double workedOutVal = ImplUncertaintyEvaluator().evaluate(n, B, policy);
 
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_SUITE( standardAlgorithm )
       const_cast<Task&>(n.graph()[*vi])._probDelaySuccess = 0.2;
     }
     policy.clear();
-    DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+    DynamicAlgorithm<ImplementationUncertaintyEvaluator>().optimalPolicyAndValue(n, B, policy, optValue);
     BOOST_CHECK_CLOSE(40.3619, optValue, 1e-04);
     BOOST_CHECK_CLOSE(40.3619, ImplUncertaintyEvaluator().evaluate(n,B,policy), 1e-04);
   }
@@ -126,6 +126,25 @@ BOOST_AUTO_TEST_SUITE( staticStochasticAlgorithm )
 
     BOOST_CHECK_CLOSE(simulatedVal, mean, 1);
   }
+
+  BOOST_AUTO_TEST_CASE( testFastEvaluatorForImpunc)
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.8/Pat12.rcp");
+    
+    StaticPolicy staticPolicy;
+    double actVal = deterministicPolicy(n, B, staticPolicy, true);
+    BOOST_REQUIRE_EQUAL(B, staticPolicy._targets.size());
+
+    std::cout << "Working out the exact mean of the Impunc static policy" << std::endl;
+    double meanVal = ImplUncertaintyEvaluator().evaluate(n, B, staticPolicy);
+
+    BOOST_REQUIRE_EQUAL(B, staticPolicy._targets.size());
+    double fastMeanVal = FastEvaluator<StaticPolicy, ImplementationUncertaintyEvaluator>(staticPolicy).evaluate(n, B);
+    BOOST_CHECK_CLOSE(meanVal, fastMeanVal, 1e-4);
+  }
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // Testing the persisted policy
@@ -142,7 +161,7 @@ BOOST_AUTO_TEST_SUITE( persistedPolicy )
     double optValue = 0;
     {
       PersistantStoragePolicy psp("bla.policy", n);
-      optValue = DynamicAlgorithm<StandardEvaluator>::execute(n, B, psp);
+      optValue = DynamicAlgorithm<StandardEvaluator>().execute(n, B, psp);
     }
     PersistedPolicy ppol("bla.policy", n);
     double workedOutVal = StandardDynamicEvaluator().evaluate(n, B, ppol);
@@ -158,7 +177,7 @@ BOOST_AUTO_TEST_SUITE( persistedPolicy )
 
     double optValue = 0;
     DynamicPolicy policy;
-    DynamicAlgorithm<StandardEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+    DynamicAlgorithm<StandardEvaluator>().optimalPolicyAndValue(n, B, policy, optValue);
     
     NullStateVisitor vnull;
     Simulation<DynamicPolicy, NullStateVisitor> sim(n, policy, vnull);
@@ -180,7 +199,7 @@ BOOST_AUTO_TEST_SUITE( persistedPolicy )
 
     double optValue = 0;
     DynamicPolicy policy;
-    DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalPolicyAndValue(n, B, policy, optValue);
+    DynamicAlgorithm<ImplementationUncertaintyEvaluator>().optimalPolicyAndValue(n, B, policy, optValue);
     
     NullStateVisitor vnull;
     Simulation<DynamicPolicy, NullStateVisitor, true> sim(n, policy, vnull);

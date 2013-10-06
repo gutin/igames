@@ -20,7 +20,7 @@ void populateStaticStochasticModel(const Network& net_, size_t budget_, IloEnv& 
   // Get all states -- there could be thousands of these! 
   // This is ok because ultimately we're just preparing the model for it to be solved later
   StateCollection sc;
-  DynamicAlgorithm<NullEvaluator>::execute(net_, 0, sc);
+  DynamicAlgorithm<NullEvaluator>().execute(net_, 0, sc);
   
   std::cout << "Got the states .. all " << sc._statesAggregated.size() << " of them " << std::endl;  
 

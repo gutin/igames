@@ -20,7 +20,7 @@ double ImplementationUncertaintyEvaluator::evaluate(const UDC& udc_,
   }
   if(candidate_->empty())
   {
-    return StandardEvaluator::evaluate(udc_, unet_, uv_, net_, state_, candidate_, totalRate_, budget_, fcode_, stmap_);
+    return _stdEval.evaluate(udc_, unet_, uv_, net_, state_, candidate_, totalRate_, budget_, fcode_, stmap_);
   }
   double value = 0;
   const size_t currentTau = tau(udc_, state_, budget_);

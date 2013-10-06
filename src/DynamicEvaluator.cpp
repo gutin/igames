@@ -122,4 +122,27 @@ ImplUncertaintyEvaluator::evaluateInStateImpl(const Network& net_,
   return  evaluateInStateImplBase(net_, statePtr_, actionPtr_, victims_, policy_, finished_);
 }
 
+template <class PT, class SE>
+template <class DSP>
+double FastEvaluator<PT,SE>::visitState(const Network net_, 
+                                        size_t budget_,
+                                        const UDCNetwork& unet_,
+                                        const UDC& udc_,
+                                        vertex_i uPtr_,
+                                        const State& s,
+                                        const OrderedTaskSet& active, 
+                                        int fcode,
+                                        StateTemplateMap& stmap,
+                                        DSP& storagePolicy_)
+{
+  ActionSharedPtr actionPtr = _policy.at(s);
+
+  double totalRate = 0;
+  BOOST_FOREACH(vertex_t v, s._active)
+  {
+    totalRate += util::rate(v, net_, s, actionPtr);
+  }
+  return _stateEval.evaluate(udc_, unet_, *uPtr_, net_, s,actionPtr,totalRate,budget_,fcode,stmap); 
+}
+
 }}
