@@ -25,6 +25,11 @@ struct Task
    * Unit cost of crashing that task by the single renewable resource
    */
   double _crashingCost;
+
+  /*
+   * Minimum investment of the single renewable resource into this task
+   */
+  const static double MIN_INVESTMENT = 1;
 };
 
 }}

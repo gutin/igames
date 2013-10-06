@@ -66,20 +66,37 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
   {
     return 0;
   }
+  // The value of a state-decision pair in the crashing game is worked out as follows:
+  // We know that the optimal renewable resource allocation for the proliferator is a corner-point of a polyhedron
+  // So we iterate through each task in the current active set:
+  //  1. Pretend that the proliferator puts as much as he can into it (taking into account min. investment into each task constraint)
+  //  2. Lets also assume that the exact amount of the renewable resource is the the max number of tasks that can run in parallel
+  //  3. So based on this information we know what all the possibilities are for the scaling of each task's duration
+  // We minimize over all valus of these possiblities and essentially solve the proliferator's minimization subproblem
+  
+  // The following is a 'helper quantity' - we work out what would be the total cost of renewable rsource if we invested the minimum possible
+  // in each task
   double residualCost = 0;
   BOOST_FOREACH(vertex_t t, state_._active)
   {
-    residualCost += TASK_ATTR(t, _crashingCost);
+    residualCost += Task::MIN_INVESTMENT * TASK_ATTR(t, _crashingCost);
   }
+
+  // Begin the pointwise minimization
   double minValue = std::numeric_limits<double>::max();
   BOOST_FOREACH(vertex_t t, state_._active)
   {
+    // Enumerator and denominator in the final expression
     double enu = 1, denom = 0;
-    double crashingAmount = (unet_._maxParallel - residualCost + TASK_ATTR(t, _crashingCost)) / TASK_ATTR(t, _crashingCost);  
+
+    // If the proliferator wuld put as much as possible into task 't' it would cost
+    // ('total renewable resource' - ('the above helper quantity' - 'min investment cost into t')) * 'unit cost of crashing t'
+    double crashingAmount = (unet_._maxParallel - residualCost + Task::MIN_INVESTMENT * TASK_ATTR(t, _crashingCost)) / TASK_ATTR(t, _crashingCost);  
 
     double totalRenewableResourceExpended = 0;
     BOOST_FOREACH(vertex_t u, state_._active)
     {
+      // optimised way of finding the value in the subsequent state
       double nextVal = 0;
       StateTemplate& nextST = nextTemplate(u, udc_, uv_, stmap_, net_, unet_, fcode_);
       const UDC& stUDC = unet_[nextST._udc]; 
@@ -115,16 +132,23 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
         }
         nextVal = stUDC.value(tav);
       }
-      double xi = t == u ? crashingAmount : 1;
+
+      // Found the value in the subsequnt state and xi is the amount of RR put in
+      double xi = t == u ? crashingAmount : Task::MIN_INVESTMENT;
       totalRenewableResourceExpended += xi * TASK_ATTR(u, _crashingCost);
-      assert(xi > 0.999);
+//      assert(xi >= Task::MIN_INVESTMENT - 1e-04); 
+
       double rate = util::rate(u, net_, state_, candidate_);
+
+      // Build up the final expression
       enu += nextVal * rate * xi;
       denom += rate * xi; 
     }
     assert(std::abs(totalRenewableResourceExpended - unet_._maxParallel) < 1e-3);
     assert(denom > 0);
+    // THe final expression....
     double val = enu / denom;
+    // .. minimize over it.
     minValue = std::min(minValue, val);
   }
   return minValue;
