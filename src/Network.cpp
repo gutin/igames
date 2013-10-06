@@ -154,6 +154,22 @@ bool Network::import(const std::string& file_, bool delaysFromFile_)
   }
   ifs.close();
   initSecondary();
+
+  // lastly setup the crashing costs. doing this in a separate pass to avoid interfereing with the deterministic stream
+  // of random reals for the interdiction success probability values. 
+  // The crashign costs shall be uniformly distributed in the range [0.5, 1)
+  boost::uniform_real<> crashingCostDistro(0.5,1);
+  crashingCostDistro(randomGenerator);
+  boost::variate_generator<boost::mt19937&,
+                           boost::uniform_real<>
+                           > crashingCostGenerator(randomGenerator, crashingCostDistro);
+  vertex_i vi, vi_end;
+  for(boost::tie(vi, vi_end) = boost::vertices(_g); vi != vi_end; ++vi)
+  {
+    
+    const_cast<Task&>(_g[*vi])._crashingCost = crashingCostGenerator();
+    std::cout << "Task " << *vi << " has a unit crashing cost of " << _g[*vi]._crashingCost << std::endl;
+  }
   return true;
 }
 

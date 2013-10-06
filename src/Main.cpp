@@ -40,6 +40,7 @@ int main(int ac_, char** av_)
     (ORDER_STRENGTH_ARG_NAME, po::value<double>(), "Order strength")
     (RCPBASE_ARG_NAME, po::value<std::string>(), "RCP file base directory")
     ("impunc", "Version with implementation uncertainty?")
+    ("crash", "Version with crashing?")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
     ("persist,P",po::value<std::string>(), "Persist to the given file")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
@@ -98,7 +99,11 @@ int main(int ac_, char** av_)
 
   
   double value = 0;
-  if(vm.count("impunc"))
+  if(vm.count("crash"))
+  {
+    value = DynamicAlgorithm<CrashingEvaluator>::optimalValue(n, budget);
+  }
+  else if(vm.count("impunc"))
   {
     value = DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalValue(n, budget);
   }

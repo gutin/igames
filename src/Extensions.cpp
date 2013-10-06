@@ -66,12 +66,19 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
   {
     return 0;
   }
+  double residualCost = 0;
+  BOOST_FOREACH(vertex_t t, state_._active)
+  {
+    residualCost += TASK_ATTR(t, _crashingCost);
+  }
+  std::cout << "Residucal cost in state " << state_.asString() << " is " << residualCost << std::endl;
   double minValue = std::numeric_limits<double>::max();
   BOOST_FOREACH(vertex_t t, state_._active)
   {
     double enu = 1, denom = 0;
-    double crashingAmount = (unet_._maxParallel - state_._res) / TASK_ATTR(t, _crashingCost);  
+    double crashingAmount = (unet_._maxParallel - residualCost + TASK_ATTR(t, _crashingCost)) / TASK_ATTR(t, _crashingCost);  
 
+    double totalRenewableResourceExpended = 0;
     BOOST_FOREACH(vertex_t u, state_._active)
     {
       double nextVal = 0;
@@ -110,11 +117,14 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
         nextVal = stUDC.value(tav);
       }
       double xi = t == u ? crashingAmount : 1;
+      totalRenewableResourceExpended += xi * TASK_ATTR(u, _crashingCost);
+      assert(xi > 0.999);
       double rate = util::rate(u, net_, state_, candidate_);
       enu += nextVal * rate * xi;
       denom += rate * xi; 
     }
-
+    assert(std::abs(totalRenewableResourceExpended - unet_._maxParallel) < 1e-3);
+    assert(denom > 0);
     double val = enu / denom;
     minValue = std::min(minValue, val);
   }
