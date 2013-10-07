@@ -26,12 +26,14 @@ LINKS = -L${BOOST_LIB_LOCATION}  -L$(CORE_LIBS)
 CPPFLAGS = -MMD $(OPT_LEVEL) $(INCLUDES) -DIL_STD
 LFLAGS = $(OPT_LEVEL) -lboost_program_options $(LINKS)
 HEURISTIC_LFLAGS = -framework CoreFoundation -framework IOKit -L$(CPLEX_LIBS) -lilocplex -lcplex -L$(CONCERT_LIBS) -lconcert -lm -lpthread
+CHBIN_LFLAGS = -framework CoreFoundation -framework IOKit -L$(CPLEX_LIBS) -lilocplex -lcplex -L$(CONCERT_LIBS) -lconcert -lm -lpthread
 
 LIB_NAME = $(INSTALL_DIR)/igames.a
 HEURISTIC_LIB_NAME = $(INSTALL_DIR)/higames.a
 BIN = $(INSTALL_DIR)/main
 TEST_BIN = $(INSTALL_DIR)/unit-tests
 HEURISTICS_BIN = $(INSTALL_DIR)/heuristic
+CHBIN = $(INSTALL_DIR)/hcondor
 EXP_BIN = $(INSTALL_DIR)/psample
 
 LIB_SRCS = Network.cpp \
@@ -59,6 +61,7 @@ EXP_HEADERS = experiment/Simulation.hpp
 
 BIN_SRCS = Main.cpp
 HBIN_SRCS = HeuristicMain.cpp
+CHBIN_SRCS = CondorHMain.cpp
 TEST_SRCS = test/test.cpp
 EXP_SRCS = experiment/PolicySampling.cpp
 
@@ -67,6 +70,7 @@ BIN_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(BIN_SRCS))
 TEST_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(TEST_SRCS))
 HEURISTIC_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(HEURISTIC_LIB_SRCS))
 HBIN_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(HBIN_SRCS))
+CHBIN_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(CHBIN_SRCS))
 EXP_OBJS=$(patsubst %.cpp,$(INSTALL_DIR)/%.o,$(EXP_SRCS))
 
 all : headers install hinstall einstall test run_test
@@ -99,6 +103,9 @@ hinstall : heuristics_lib $(HBIN_OBJS) $(HEURISTIC_LIB_NAME) $(LIB_NAME)
 	
 einstall : library $(LIB_NAME)  $(EXP_OBJS)
 	$(CXX) $(EXP_OBJS) $(LIB_NAME) -o $(EXP_BIN) $(LFLAGS)
+
+hcondor : $(CHBIN_OBJS) library heuristics_lib $(HEURISTIC_LIB_NAME) $(LIB_NAME)
+	$(CXX) $(CHBIN_OBJS) $(HEURISTIC_LIB_NAME) $(LIB_NAME) -o $(CHBIN) $(CHBIN_LFLAGS)
 
 $(INSTALL_DIR)/%.o: %.cpp 
 	$(CXX) $(CPPFLAGS) -c $< -o $(INSTALL_DIR)/$(subst .cpp,.o,$<)
