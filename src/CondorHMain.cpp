@@ -46,8 +46,8 @@ int main(int ac_, char** av_)
     }
     else if(crash)
     {
-      std::cout << "nyi" << std::endl;
-      return 1;
+      //USe an explicit Kulkarni solver to get the right value
+      value = FastEvaluator<StaticPolicy, CrashingEvaluator>(policy).evaluate(n, budget);
     }
     else
     {
