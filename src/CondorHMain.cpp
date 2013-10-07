@@ -5,6 +5,7 @@
 #include "StaticAlgorithms.hpp"
 #include "Extensions.hpp"
 #include "DynamicEvaluator.hpp"
+#include "DynamicAlgorithm.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -30,6 +31,7 @@ int main(int ac_, char** av_)
   std::string heurType = av_[4];
   std::cout << "heur type is " << heurType << std::endl;
   bool impunc = heurType == "impunc";
+  bool crash = heurType == "crash";
   if(impunc) std::cout << "solving the implementation uncertianty version" << std::endl;
   StaticPolicy policy;
   double value = 0;
@@ -41,6 +43,11 @@ int main(int ac_, char** av_)
     {
       //USe an explicit Kulkarni solver to get the right value
       value = FastEvaluator<StaticPolicy, ImplementationUncertaintyEvaluator>(policy).evaluate(n, budget);
+    }
+    else if(crash)
+    {
+      std::cout << "nyi" << std::endl;
+      return 1;
     }
     else
     {
@@ -57,9 +64,27 @@ int main(int ac_, char** av_)
       value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, 0);
     }
   }
-  else 
+  else if(heurType == "static")
   {
     value = staticStochasticPolicy(n, budget, policy);
+  }
+  else 
+  {
+    if(impunc)
+    {
+      std::cout << "Solving the optimal impunc" << std::endl;
+      value = DynamicAlgorithm<ImplementationUncertaintyEvaluator>().optimalValue(n, budget);
+    }
+    else if(crash)
+    {
+      std::cout << "Solving the optimal crashing" << std::endl;
+      value = DynamicAlgorithm<CrashingEvaluator>().optimalValue(n, budget);
+    }
+    else
+    {
+      std::cout << "Solving the optimal standard" << std::endl;
+      value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, budget);
+    }
   }
   std::cout << value << std::endl;
   return 0;
