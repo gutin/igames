@@ -54,9 +54,10 @@ void interdictionProbs(const Network& net_, size_t budget_, const std::string& p
 int main(int ac_, char** av_)
 {
   size_t budget, nruns = 1000;
-  if(ac_ == 0)
+  if(ac_ == 1)
   {
     std::cout << "<rcp-file> <policy-file> <budget> [<runs>]" << std::endl;
+    return 1;
   }
   Network n;
   std::string rcpFile = av_[1];
