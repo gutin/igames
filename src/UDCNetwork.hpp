@@ -56,6 +56,8 @@ public:
   explicit UDCNetwork(const Network&);
 
   size_t size() const { return boost::num_vertices(_ug); }
+  size_t _maxParallel;
+
   void sortedUDCs(UDCPtrs& ) const;
 
   UDC& operator[](uvertex_t u_) { return _ug[u_]; }
@@ -86,8 +88,12 @@ public:
   template <class VertexOrEdge>
   void operator()(std::ostream& out_, const VertexOrEdge& v_) const 
   {
-    out_ << "[label=\"(" << _net.asString(_unet._ug[v_]._tasks) << ", "
-         << _unet._ug[v_].rank() << ")\"]";
+    out_ << "[label=\"([ ";
+    BOOST_FOREACH(vertex_t t, _unet._ug[v_]._tasks)
+    {
+      out_ << t << " ";
+    }
+    out_ << "], " << _unet._ug[v_].rank() << ")\"]";
   }
 private:
   const Network& _net; 

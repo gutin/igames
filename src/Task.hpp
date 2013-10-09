@@ -3,24 +3,33 @@
 
 namespace ig { namespace core {
 
-class Task
+struct Task
 {
-public:
-  Task(double nu_, double delta_, int index_) : _nu(nu_), _delta(delta_), _index(index_) {}
-  Task() {}
-  void setFrom(const Task&);
-  
-  double delta() const { return _delta; }
-  double nu() const { return _nu; }
+  /*
+   * Expected normal and delayed durations (assuming exponential distros)
+   */
   double expNormal() const { return 1.0 / _nu; }
   double expDelayed() const { return 1.0 / _delta; }
-  int index() const { return _index; }
 
-  bool operator==(const Task& other) const;
-        
+  /*
+   * Normal and delayed rates
+   */
   double _nu, _delta;
+
+  /*
+   *Probability interdiction is successful
+   */
   double _probDelaySuccess;
-  int _index;
+
+  /*
+   * Unit cost of crashing that task by the single renewable resource
+   */
+  double _crashingCost;
+
+  /*
+   * Minimum investment of the single renewable resource into this task
+   */
+  const static double MIN_INVESTMENT = 1;
 };
 
 }}

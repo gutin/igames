@@ -1,5 +1,9 @@
 #include "Network.hpp"
 
+#include <boost/random/variate_generator.hpp>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/mersenne_twister.hpp>
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -16,12 +20,12 @@ void Network::connect(const vertex_t& s_, const vertex_t& t_)
   boost::add_edge(s_, t_, _g);
 }
 
-vertex_t Network::add(const Task& t_)
+vertex_t Network::add(double nu_, double delta_, double pdelaySuccess_)
 {
   vertex_t u = boost::add_vertex(_g);
-  _g[u]._index = t_._index;
-  _g[u]._nu = t_._nu;
-  _g[u]._delta = t_._delta;
+  _g[u]._nu = nu_;
+  _g[u]._delta = delta_;
+  _g[u]._probDelaySuccess = pdelaySuccess_;
   return u;
 }
 
@@ -72,13 +76,19 @@ Network::Network()
 
 bool Network::import(const std::string& file_, bool delaysFromFile_)
 {
+  //setup the rng for a deterministic stream of 'random' numbers. we do this for reproducebility
+  boost::mt19937 randomGenerator(0);
+  boost::uniform_real<> interdictionSuccessDistro;
+  interdictionSuccessDistro(randomGenerator);
+  boost::variate_generator<boost::mt19937&,
+                           boost::uniform_real<>
+                           > probDelaySuccessGenerator(randomGenerator, interdictionSuccessDistro);
+
   std::ifstream ifs(file_.c_str(), std::ifstream::in);
   std::string line;
   int count(0), activityName(0);
   double duration;
   
-  std::srand(0);//deterministic stream of random nums
-
   vertex_t last;
   while(std::getline(ifs, line))
   {
@@ -102,11 +112,9 @@ bool Network::import(const std::string& file_, bool delaysFromFile_)
           // if we dont take from the file the default is to double the delayedDuration
           delayedDuration = 2*duration;
         }
-        Task t((1/duration), (1/delayedDuration), activityName);
-        t._probDelaySuccess = std::rand() / double(RAND_MAX); 
-        last = add(t);
-        std::cout << "Adding task [" << last << "] with duration [" << duration << "]"
-                  << " delayedDuration [" << delayedDuration << "]. Delay success prob [" << t._probDelaySuccess  << "]" << std::endl;
+        last = add(1/duration, 1/delayedDuration, probDelaySuccessGenerator());
+        std::cout << "Adding task [" << last << "] with duration [" << _g[last].expNormal() << "]"
+                  << " delayedDuration [" << _g[last].expDelayed() << "]. Delay success prob [" << _g[last]._probDelaySuccess  << "]" << std::endl;
         if(count == 4) _start = last;
         ++activityName;
       }
@@ -139,13 +147,29 @@ bool Network::import(const std::string& file_, bool delaysFromFile_)
         if(intCount++ <= 5) continue;
         vertex_i nextV = findFromIndex(next-1);
         connect(*current, *nextV);
-        std::cout << "Connected tasks with idxs " << _g[*current].index() << ", " << _g[*nextV].index() << std::endl;
+        std::cout << "Connected tasks with idxs " << *current << ", " << *nextV << std::endl;
       }
     }
     count++;
   }
   ifs.close();
   initSecondary();
+
+  // lastly setup the crashing costs. doing this in a separate pass to avoid interfereing with the deterministic stream
+  // of random reals for the interdiction success probability values. 
+  // The crashign costs shall be uniformly distributed in the range [0.5, 1)
+  boost::uniform_real<> crashingCostDistro(0.5,1);
+  crashingCostDistro(randomGenerator);
+  boost::variate_generator<boost::mt19937&,
+                           boost::uniform_real<>
+                           > crashingCostGenerator(randomGenerator, crashingCostDistro);
+  vertex_i vi, vi_end;
+  for(boost::tie(vi, vi_end) = boost::vertices(_g); vi != vi_end; ++vi)
+  {
+    
+    const_cast<Task&>(_g[*vi])._crashingCost = crashingCostGenerator();
+    std::cout << "Task " << *vi << " has a unit crashing cost of " << _g[*vi]._crashingCost << std::endl;
+  }
   return true;
 }
 
@@ -155,7 +179,7 @@ vertex_i Network::findFromIndex(int i_) const
   vertex_i vi, vi_end;
   for (boost::tie(vi, vi_end) = boost::vertices(_g); vi != vi_end; ++vi)
   {
-    if(_g[*vi].index() == i_) return vi;
+    if(*vi == i_) return vi;
   }
   return vi_end;
 }

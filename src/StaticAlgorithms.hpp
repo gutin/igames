@@ -41,7 +41,7 @@ struct NullEvaluator
                 double,size_t,int,StateTemplateMap&) {}
 };
 
-double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_);
+double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_, bool impunc_ = false);
 
 double staticStochasticPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_);
 

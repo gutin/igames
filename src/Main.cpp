@@ -40,6 +40,7 @@ int main(int ac_, char** av_)
     (ORDER_STRENGTH_ARG_NAME, po::value<double>(), "Order strength")
     (RCPBASE_ARG_NAME, po::value<std::string>(), "RCP file base directory")
     ("impunc", "Version with implementation uncertainty?")
+    ("crash", "Version with crashing?")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
     ("persist,P",po::value<std::string>(), "Persist to the given file")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
@@ -61,7 +62,7 @@ int main(int ac_, char** av_)
 
   Network n;
   std::string rcpFile;
-  std::cout << sizeof(size_t) << " is the answer" << std::endl;
+  std::cout << "Solving for budget of " << budget << std::endl;
 
   if(vm.count(SIZE_ARG_NAME) && vm.count(INSTANCE_ARG_NAME) &&
      vm.count(ORDER_STRENGTH_ARG_NAME) && vm.count(RCPBASE_ARG_NAME))
@@ -98,20 +99,24 @@ int main(int ac_, char** av_)
 
   
   double value = 0;
-  if(vm.count("impunc"))
+  if(vm.count("crash"))
   {
-    value = DynamicAlgorithm<ImplementationUncertaintyEvaluator>::optimalValue(n, budget);
+    value = DynamicAlgorithm<CrashingEvaluator>().optimalValue(n, budget);
+  }
+  else if(vm.count("impunc"))
+  {
+    value = DynamicAlgorithm<ImplementationUncertaintyEvaluator>().optimalValue(n, budget);
   }
   else if(vm.count("persist"))
   {
     std::string file = vm["persist"].as<std::string>();
     std::cout << "Persisting policy to file: " << file.c_str() << std::endl;
     PersistantStoragePolicy psp(file, n);
-    value = DynamicAlgorithm<StandardEvaluator>::execute(n, budget, psp); 
+    value = DynamicAlgorithm<StandardEvaluator>().execute(n, budget, psp); 
   }
   else
   {
-    value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, budget);
+    value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, budget);
   }
   std::cout << value << std::endl;
   return 0;

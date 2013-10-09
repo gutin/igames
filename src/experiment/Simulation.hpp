@@ -65,14 +65,19 @@ double Simulation<IP, SV, impunc>::run(size_t buget_)
     // Sample random task finish times to see which task finishes first
     double minDuration = std::numeric_limits<double>::max();
     vertex_t finishing;
+   
+    ActionSharedPtr effectiveActionPtr = impunc ? ActionSharedPtr(new Action(*actionPtr)) : actionPtr;
     BOOST_FOREACH(vertex_t t, statePtr->_active)
     {
       double tDuration = 0;
-      if(actionPtr->find(t) != actionPtr->end() ||
-         statePtr->_interdicted.find(t) != statePtr->_interdicted.end())
+      if(statePtr->_interdicted.find(t) != statePtr->_interdicted.end())
+      {
+        tDuration = genExponential(_net.graph()[t]._delta);
+      }
+      else if(actionPtr->find(t) != actionPtr->end())
       {
         if(!impunc || 
-           ( impunc && (std::rand() / double(RAND_MAX)) < _net.graph()[t]._probDelaySuccess) )
+           ( impunc && (double(std::rand()) / double(RAND_MAX)) < _net.graph()[t]._probDelaySuccess) )
         {
           //roll a dice on whether interdiction succeeded
           tDuration = genExponential(_net.graph()[t]._delta);
@@ -80,6 +85,7 @@ double Simulation<IP, SV, impunc>::run(size_t buget_)
         else
         {
           tDuration = genExponential(_net.graph()[t]._nu);
+          effectiveActionPtr->erase(t);
         }
       }
       else
@@ -94,7 +100,7 @@ double Simulation<IP, SV, impunc>::run(size_t buget_)
     }
     finished.insert(finishing);
     makespan += minDuration;
-    statePtr = ig::core::util::nextState(_net, *statePtr, actionPtr, finished, finishing);
+    statePtr = ig::core::util::nextState(_net, *statePtr, effectiveActionPtr, finished, finishing, actionPtr->size());
   }
   return makespan;
 }

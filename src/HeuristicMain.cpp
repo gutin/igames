@@ -3,6 +3,7 @@
 
 #include "Task.hpp"
 #include "StaticAlgorithms.hpp"
+#include "Extensions.hpp"
 #include "DynamicEvaluator.hpp"
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
@@ -41,6 +42,7 @@ int main(int ac_, char** av_)
     (RCPBASE_ARG_NAME, po::value<std::string>(), "Base directory with .rcp files")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
     (STATIC_OPTION, "Use the stochastic static solution?")
+    ("impunc", "Solve with implementation uncertainty?")
     (DETERMINISTIC_OPTION, "Use the deterministic solution?")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
 
@@ -94,24 +96,33 @@ int main(int ac_, char** av_)
   n.import(rcpFile, delayFromFile);
   std::cout << "There are " << boost::num_edges(n.graph()) << " edges" << std::endl;
   std::cout << "There are " << boost::num_vertices(n.graph()) << " vertices" << std::endl;
-
+  
+  bool impunc = vm.count("impunc");
   //Work out which algorithm to run...
   double value = 0; 
   StaticPolicy policy;
   if(vm.count(DETERMINISTIC_OPTION))
   {
-    deterministicPolicy(n, budget, policy);
-    // Now set any tasks in the interdiction pattern to their delayed rate and then 'solve'
-    // the efficient dynamic algorithm with 0 budget
-    vertex_i vi, vi_end;
-    for(boost::tie(vi, vi_end) = boost::vertices(n.graph()); vi != vi_end; ++vi)
+    deterministicPolicy(n, budget, policy, impunc);
+    if(impunc)
     {
-      if(policy._targets.find(*vi) != policy._targets.end())
-      {
-        const_cast<Task&>(n.graph()[*vi])._nu = n.graph()[*vi]._delta;
-      }
+      //USe an explicit Kulkarni solver to get the right value
+      value = FastEvaluator<StaticPolicy, ImplementationUncertaintyEvaluator>(policy).evaluate(n, budget);
     }
-    value = DynamicAlgorithm<StandardEvaluator>::optimalValue(n, 0);
+    else
+    {
+      // Now set any tasks in the interdiction pattern to their delayed rate and then 'solve'
+      // the efficient dynamic algorithm with 0 budget
+      vertex_i vi, vi_end;
+      for(boost::tie(vi, vi_end) = boost::vertices(n.graph()); vi != vi_end; ++vi)
+      {
+        if(policy._targets.find(*vi) != policy._targets.end())
+        {
+          const_cast<Task&>(n.graph()[*vi])._nu = n.graph()[*vi]._delta;
+        }
+      }
+      value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, 0);
+    }
   }
   else if(vm.count(STATIC_OPTION))
   {

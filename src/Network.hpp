@@ -11,8 +11,6 @@ class Network
 {
 public:
   Network();
-  void connect(const vertex_t&, const vertex_t&);
-  vertex_t add(const Task&);
   double orderStrength() const;
   const DirectedGraph& graph() const { return _g; }
 
@@ -24,19 +22,6 @@ public:
   bool isStart(vertex_t v_) const { return _start == v_; }
   bool isEnd(vertex_t v_) const { return _end == v_; }
 
-  template <class TaskCollection>
-  std::string asString(const TaskCollection& ts_) const
-  {
-    std::stringstream stream;
-    stream << "[ ";
-    BOOST_FOREACH(vertex_t v, ts_)
-    {
-      stream << _g[v].index() << " ";
-    }
-    stream << "]";
-    return stream.str();
-  }
-
   void initSecondary();
   size_t size() const;
 
@@ -47,6 +32,8 @@ private:
   vertex_t _start, _end;
 
   vertex_i findFromIndex(int i_) const;
+  vertex_t add(double,double,double);
+  void connect(const vertex_t&, const vertex_t&);
 };
 
 }}

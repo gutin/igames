@@ -14,18 +14,6 @@ using namespace boost;
 
 namespace 
 {
-  struct taskComparator 
-  {
-    taskComparator(const ig::core::DirectedGraph& g_) : _g(g_) {}
-
-    bool operator() (const ig::core::vertex_t& u_, const ig::core::vertex_t& v_) const
-    {
-      return _g[u_].index() < _g[v_].index();
-    }
-
-    const ig::core::DirectedGraph& _g;
-  };
-
   using ig::core::UDC;
   using ig::core::vertex_t;
 
@@ -44,6 +32,7 @@ namespace
 namespace ig { namespace core {
 
 UDCNetwork::UDCNetwork(const Network& net_)
+  : _maxParallel(0)
 {
   DirectedGraph tcg;
   boost::transitive_closure(net_.graph(), tcg);
@@ -54,13 +43,13 @@ UDCNetwork::UDCNetwork(const Network& net_)
   
   BOOST_FOREACH(const TaskSet& ts, udcs)
   {
-    cout << net_.asString(ts) << endl;
     if(std::find_if(ts.begin(), ts.end(), boost::bind(&Network::isStart, net_, _1)) != ts.end())
     {
       continue;
     }
     uvertex_t udc = boost::add_vertex(_ug);
     _ug[udc].init(ts, tcg);
+    _maxParallel = std::max(_maxParallel, ts.size());
   }
   
   uvertex_i vi, vi_end; 
@@ -89,7 +78,7 @@ void UDCNetwork::findUDCs(const DirectedGraph& n_, TaskSets& udcs_)
   boost::tie(vi, vi_end) = boost::vertices(n_);
   TaskList tasks(vi, vi_end); 
   
-  std::sort(tasks.begin(), tasks.end(), taskComparator(n_));
+  std::sort(tasks.begin(), tasks.end());
   for(size_t i = 0; i < tasks.size(); ++i)
   {
     TaskSets tsets;

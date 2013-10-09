@@ -9,6 +9,8 @@
 
 #include <boost/progress.hpp>
 
+#include <iterator>
+
 namespace ig { namespace core {
 
 struct StateTemplate
@@ -25,30 +27,30 @@ typedef std::map<size_t, StateTemplate> StateTemplateMap;
 struct StandardEvaluator
 {
 
-  static double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
+  double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
                   const Network& net_, 
                   const State& s, const ActionSharedPtr& candidate,
                   double totalRate, size_t budget_,
-                  size_t fcode, StateTemplateMap& stmap);  
+                  size_t fcode, StateTemplateMap& stmap) const;  
 };
 
 typedef boost::unordered_map<State, ActionSharedPtr, StateHash> DynamicPolicy;
 
 template<class StateEvaluator = StandardEvaluator>
-class DynamicAlgorithm
+class DynamicAlgorithm 
 {
 public:
-  static void optimalPolicyAndValue(const Network& network_, size_t budget_,
-                DynamicPolicy& optimalPolicy_, double& optimalValue_);
-  static double optimalValue(const Network& network_, size_t budget_);
+  void optimalPolicyAndValue(const Network& network_, size_t budget_,
+                DynamicPolicy& optimalPolicy_, double& optimalValue_) const;
+  double optimalValue(const Network& network_, size_t budget_) const;
   
-  template<class DecisionStoragePolicy>
-  static double execute(const Network&,size_t,DecisionStoragePolicy&);
+  template <class DSP>
+  double execute(const Network& net_, size_t budget_, DSP& storagePolicy_) const; 
 
+  template<class DecisionStoragePolicy>
+  size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&) const;
 private:
-  template<class DecisionStoragePolicy>
-  static size_t solveUDC(vertex_i, UDCNetwork&, const Network&, size_t, DecisionStoragePolicy&);
-
+  StateEvaluator _stateEval;
 };
 
 struct NoDecisionStorage
@@ -102,24 +104,24 @@ inline size_t tau(const UDC& udc_,
 
 template <class SE>
 void DynamicAlgorithm<SE>::optimalPolicyAndValue(const Network& network_, size_t budget_,
-                DynamicPolicy& optimalPolicy_, double& optimalValue_) 
+                DynamicPolicy& optimalPolicy_, double& optimalValue_) const 
 {
   DecisionStorageInMemory dsm(optimalPolicy_);
-  optimalValue_ = execute(network_, budget_, dsm);
+  optimalValue_ = this->execute(network_, budget_, dsm);
 }
 
 template <class SE>
-double DynamicAlgorithm<SE>::optimalValue(const Network& network_, size_t budget_)
+double DynamicAlgorithm<SE>::optimalValue(const Network& network_, size_t budget_) const
 {
   NoDecisionStorage noStorage;
-  return execute(network_, budget_, noStorage);
+  return this->execute(network_, budget_, noStorage);
 }
 
 template<class SE>
 template<class DSP>
 double DynamicAlgorithm<SE>::execute(const Network& net_,
-                                   size_t budget_,
-                                   DSP& storagePolicy_)
+                                     size_t budget_,
+                                     DSP& storagePolicy_) const
 {
   UDCNetwork unet(net_);
   size_t numUDCs = unet.size();
@@ -161,20 +163,23 @@ double DynamicAlgorithm<SE>::execute(const Network& net_,
   return unet[*startUdc].value(tau(unet._ug[*startUdc], startingState, budget_));
 }
 
-template<class SE>
+template<class T>
 template<class DSP>
-size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_, 
+size_t DynamicAlgorithm<T>::solveUDC(vertex_i uPtr_, 
                                  UDCNetwork& unet_,
                                  const Network& net_,
                                  size_t budget_,
-                                 DSP& storagePolicy_)
+                                 DSP& storagePolicy_) const
 {
   StateTemplateMap stmap;
   size_t stateCount(0);
   UDC& udc = unet_[*uPtr_];
   size_t maxFCode = (1L << udc.size()) - 2;
   std::cout << "Starting with a maximum finish code of " << maxFCode 
-            << " for UDC " << net_.asString(udc._tasks) << std::endl;
+            << " for UDC [ ";
+  std::copy(udc._tasks.begin(), udc._tasks.end(),
+            std::ostream_iterator<vertex_t>(std::cout, " "));
+  std::cout << "]" << std::endl;
   
   size_t N = udc.size();
   for(size_t y = 0; y <= budget_; ++y)
@@ -270,14 +275,14 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
         size_t tau = (1L << 2 * N)  * (budget_ - y);
         tau |= (1L << N) * fcode;
         tau |= realActiveCode;
-
+        
         double maxVal = 0;
         ActionSharedPtr bestAction;
 
         TaskList intEligible(active.begin(), active.end());
         for(size_t i = 0; i < (1L << intEligible.size()); ++i)
         {
-          if(ig::core::util::numBitsSet(i) > y) continue;
+          if(ig::core::util::numBitsSet(i) > s._res) continue;
           ActionSharedPtr candidate(new Action); 
           for(int b = 0; b < intEligible.size(); ++b)
           {
@@ -287,7 +292,7 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
             }
           }
 
-          if(candidate->size() > y)
+          if(candidate->size() > s._res)
           {
             std::cout << "Invalid action sleected!" << std::endl;
             abort();
@@ -298,7 +303,7 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
             totalRate += util::rate(v, net_, s, candidate);
           }
           
-          double val = SE::evaluate(udc, unet_, *uPtr_, net_, 
+          double val = _stateEval.evaluate(udc, unet_, *uPtr_, net_, 
                                     s, candidate,
                                     totalRate, budget_,
                                     fcode, stmap);  
@@ -309,15 +314,13 @@ size_t DynamicAlgorithm<SE>::solveUDC(vertex_i uPtr_,
           }
         }
 
-        udc.store(tau, maxVal);
         storagePolicy_(s, bestAction);
+        udc.store(tau, maxVal);
       }
     }
   }
   return stateCount;
 }
-
-
 
 inline
 StateTemplate& nextTemplate(vertex_t u_, const UDC& udc_, uvertex_t uv_,
@@ -422,7 +425,7 @@ double StandardEvaluator::evaluate(const UDC& udc_,
                                   const State& state_,
                                   const ActionSharedPtr& candidate_,
                                   double totalRate_, size_t budget_,
-                                  size_t fcode_, StateTemplateMap& stmap_)
+                                  size_t fcode_, StateTemplateMap& stmap_) const
 {
   double value = 0;
   if(state_._active.find(net_.end()) != state_._active.end() ||
