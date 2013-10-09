@@ -6,6 +6,7 @@
 #include "Utils.hpp"
 #include "Network.hpp"
 #include "UDCNetwork.hpp"
+#include "Action.hpp"
 
 #include <boost/progress.hpp>
 
@@ -29,12 +30,12 @@ struct StandardEvaluator
 
   double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
                   const Network& net_, 
-                  const State& s, const ActionSharedPtr& candidate,
+                  const State& s, const Action& candidate,
                   double totalRate, size_t budget_,
                   size_t fcode, StateTemplateMap& stmap) const;  
 };
 
-typedef boost::unordered_map<State, ActionSharedPtr, StateHash> DynamicPolicy;
+typedef boost::unordered_map<State, Action, StateHash> DynamicPolicy;
 
 template<class StateEvaluator = StandardEvaluator>
 class DynamicAlgorithm 
@@ -55,7 +56,7 @@ private:
 
 struct NoDecisionStorage
 {
-  void operator() (const State& /*state_*/, const ActionSharedPtr& /* action_ */) {}
+  void operator() (const State& /*state_*/, const Action& /* action_ */) {}
 };
 
 struct DecisionStorageInMemory
@@ -64,7 +65,7 @@ struct DecisionStorageInMemory
 
   DecisionStorageInMemory(DynamicPolicy& policy_) : _policy(policy_) {}
 
-  void operator() (const State& state_, const ActionSharedPtr& action_)
+  void operator() (const State& state_, const Action& action_)
   {
     _policy[state_] = action_;  
   }
@@ -277,24 +278,24 @@ size_t DynamicAlgorithm<T>::solveUDC(vertex_i uPtr_,
         tau |= realActiveCode;
         
         double maxVal = 0;
-        ActionSharedPtr bestAction;
+        Action bestAction;
 
         TaskList intEligible(active.begin(), active.end());
         for(size_t i = 0; i < (1L << intEligible.size()); ++i)
         {
           if(ig::core::util::numBitsSet(i) > s._res) continue;
-          ActionSharedPtr candidate(new Action); 
+          Action candidate; 
           for(int b = 0; b < intEligible.size(); ++b)
           {
             if(((i >> b) & 1) == 1)
             {
-              candidate->insert(intEligible[b]);
+              candidate.insert(intEligible[b]);
             }
           }
 
-          if(candidate->size() > s._res)
+          if(candidate.size() > s._res)
           {
-            std::cout << "Invalid action sleected!" << std::endl;
+            std::cout << "Invalid action sleected! Action size is " << candidate.size() << std::endl;
             abort();
           }
           double totalRate = 0;
@@ -423,7 +424,7 @@ double StandardEvaluator::evaluate(const UDC& udc_,
                                   uvertex_t uv_,
                                   const Network& net_, 
                                   const State& state_,
-                                  const ActionSharedPtr& candidate_,
+                                  const Action& candidate_,
                                   double totalRate_, size_t budget_,
                                   size_t fcode_, StateTemplateMap& stmap_) const
 {
@@ -446,12 +447,12 @@ double StandardEvaluator::evaluate(const UDC& udc_,
     else
     {
       size_t tav = (1L << (2* stUDC._tasks.size())) *
-                 (budget_ - state_._res + candidate_->size());
+                 (budget_ - state_._res + candidate_.size());
       tav |= (1L << stUDC._tasks.size()) * st._activationCode;
       size_t tmp = (~0) - ((1L << stUDC._tasks.size()) - 1L) + st._activationCode;
       tav |= ~(tmp);
 
-      BOOST_FOREACH(vertex_t t, *candidate_)
+      BOOST_FOREACH(vertex_t t, candidate_.asTaskSet())
       {
         if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
         {

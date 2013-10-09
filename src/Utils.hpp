@@ -4,22 +4,24 @@
 #include "CommonTypes.hpp"
 #include "Network.hpp"
 #include "State.hpp"
+#include "Action.hpp"
 #include <algorithm>
 
 namespace ig { namespace core { namespace util {
 
-inline size_t numBitsSet(int i)
+template <class Number>
+inline size_t numBitsSet(Number i)
 {
   i = i - ((i >> 1) & 0x55555555);
   i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
   return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
-inline double rate(vertex_t t, const Network& net_, const State& state_, const ActionSharedPtr& actionPtr_)
+inline double rate(vertex_t t, const Network& net_, const State& state_, const Action& action_)
 {
   double delayedRate = net_.graph()[t]._delta;
   double normalRate = net_.graph()[t]._nu;
-  if(actionPtr_->find(t) != actionPtr_->end() || state_._interdicted.find(t) != state_._interdicted.end())
+  if(action_.affects(t) || state_._interdicted.find(t) != state_._interdicted.end())
     return net_.graph()[t]._delta;
   return net_.graph()[t]._nu;
 }
@@ -56,13 +58,13 @@ inline void startingState(const Network& net_, size_t budget_, State& startingSt
 
 StateSharedPtr nextState(const Network& net_,
           const State& state_,
-          const ActionSharedPtr& actionPtr_,
+          const Action& action_,
           const OrderedTaskSet& finished_,
           const vertex_t u_);
 
 StateSharedPtr nextState(const Network& net_,
           const State& state_,
-          const ActionSharedPtr& actionPtr_,
+          const Action& actionPtr_,
           const OrderedTaskSet& finished_,
           const vertex_t u_,
           size_t constIncurred_);

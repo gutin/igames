@@ -6,25 +6,25 @@ namespace ig { namespace core { namespace util {
 StateSharedPtr 
 nextState(const Network& net_,
           const State& state_,
-          const ActionSharedPtr& actionPtr_,
+          const Action& action_,
           const OrderedTaskSet& finished_,
           const vertex_t u_)
 {
-  return nextState(net_, state_, actionPtr_, finished_, u_, actionPtr_->size());
+  return nextState(net_, state_, action_, finished_, u_, action_.size());
 }
 
 StateSharedPtr 
 nextState(const Network& net_,
           const State& state_,
-          const ActionSharedPtr& actionPtr_,
+          const Action& action_,
           const OrderedTaskSet& finished_,
           const vertex_t u_,
           const size_t costIncurred_)
 {
-  assert(actionPtr_->size() <= state_._res);
+  assert(action_.size() <= state_._res);
 
   StateSharedPtr ret(new State(state_));
-  ret->addInterdictedSet(*actionPtr_);
+  ret->addInterdictedSet(action_.asTaskSet());
   ret->_active.erase(u_);
   ret->_interdicted.erase(u_);
   ret->_res -= costIncurred_;

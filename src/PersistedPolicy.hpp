@@ -4,6 +4,7 @@
 #include "CommonTypes.hpp"
 #include "Network.hpp"
 #include "State.hpp"
+#include "Action.hpp"
 
 #include <string>
 #include <fstream>
@@ -13,33 +14,33 @@ namespace ig { namespace core {
 class PersistedPolicy
 {
 public:
-  ActionSharedPtr at(const State& state_) const;
-  ActionSharedPtr at(const StateSharedPtr& statePtr_) const;
+  Action at(const State& state_) const;
 
-  PersistedPolicy(const std::string& file_, const Network& net_);
-  ~PersistedPolicy();
+  PersistedPolicy(const std::string& persistDir_, const Network& net_);
 
 private:
-  enum { MAX_CACHE_SIZE = 5000000 };
-  void readState(State&, ActionSharedPtr&) const;
+  void readState(std::ifstream&, State&, Action&) const;
   
-  mutable std::ifstream _input;
+  const std::string _persistDir;
   const Network& _net;
+  mutable OrderedTaskSet _currentUDC;
 
-  //avoid having to go to disk ALL the time
-  mutable StateSharedPtrMap<ActionSharedPtr>::type _cache;
+  std::vector<size_t> _indices;
+  std::vector<Action> _actions;
 };
 
 class PersistantStoragePolicy
 {
 public:
-  PersistantStoragePolicy(const std::string& file_, const Network& net_);
-  ~PersistantStoragePolicy();
+  PersistantStoragePolicy(const std::string& persistDir_, const Network& net_);
 
-  void operator() (const State& state_, const ActionSharedPtr& actionPtr_);
+  void operator() (const State& state_, const Action& actionPtr_);
 private:
-  std::ofstream _output;
+  std::string _persistDir;
+  std::ofstream _out;
   const Network& _net;
+
+  OrderedTaskSet _currentUDC;
 };
 
 }}

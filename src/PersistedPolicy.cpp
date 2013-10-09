@@ -3,68 +3,62 @@
 #include <list>
 
 namespace {
-  const int BUFFER_SIZE = 512;
+
+const int BUFFER_SIZE = 512;
+
+using namespace ig::core;
+
+std::string udcFileName(const OrderedTaskSet& ts, const std::string& persistDir)
+{
+  std::stringstream sstr;
+  sstr << persistDir << "/";
+  BOOST_FOREACH(vertex_t t, ts)
+  {
+    sstr << t << "_";
+  }
+  sstr << ".udc";
+  return sstr.str();
+}
+
 }
 
 namespace ig { namespace core {
 
-ActionSharedPtr PersistedPolicy::at(const State& state_) const
+Action PersistedPolicy::at(const State& state_) const
 {
-  //TODO: clean this up.. also inefficient (temporary workaround)
-  StateSharedPtr statePtr(new State(state_));
-  return at(statePtr);
+  OrderedTaskSet theUDC;
+  std::set_union(state_._active.begin(), state_._active.end(),
+                 state_._dormant.begin(), state_._dormant.end(),
+                 std::inserter(theUDC, theUDC.begin()));
+  if(theUDC != _currentUDC)
+  {
+    // the sin of copying is forgiven here for it aint perf critical
+    _currentUDC = theUDC;
+    std::cout << "Loading a new UDC to cache" << std::endl;
+    std::ifstream in(udcFileName(_currentUDC, _persistDir).c_str());
+
+    in.seekg(0, std::ios::end);
+    size_t length = in.tellg();
+    in.seekg(0, std::ios::beg);
+    for(size_t pos = 0; pos < length; pos += 1 +  _net.size())
+    {
+      Action action;
+      StateSharedPtr sPtr(new State);
+      readState(in, *sPtr, action);
+      //read in the taul value  
+      return action;
+    }
+    std::cout << "Finished loading the new UDC. Continuing." << std::endl;
+  }
+
+  return Action();
 }
 
-ActionSharedPtr PersistedPolicy::at(const StateSharedPtr& statePtr_) const
-{
-  boost::unordered_map<StateSharedPtr, ActionSharedPtr>::iterator it;
-  if((it = _cache.find(statePtr_)) != _cache.end())
-  {
-    std::cout << "Cache hit!" << std::endl;
-    return it->second;
-  }
-  ActionSharedPtr ret(new Action);
-  _input.seekg(0, std::ios::end);
-  size_t length = _input.tellg();
-  _input.seekg(0, std::ios::beg);
-  std::list<StateSharedPtr> stateWindow(MAX_CACHE_SIZE);
-  std::list<ActionSharedPtr> actionWindow(MAX_CACHE_SIZE);
-  for(size_t pos = 0; pos < length; pos += 1 +  _net.size())
-  {
-    StateSharedPtr sPtr(new State);
-    readState(*sPtr, ret);
-    if(stateWindow.size() >= MAX_CACHE_SIZE)
-    {
-      stateWindow.pop_front();
-    }
-    stateWindow.push_back(sPtr);
-    if(actionWindow.size() >= MAX_CACHE_SIZE)
-    {
-      actionWindow.pop_front();
-    }
-    actionWindow.push_back(ret);
-    if(*sPtr == *statePtr_)
-    {
-      _cache.clear();
-      while(!stateWindow.empty())
-      {
-        _cache[stateWindow.front()] = actionWindow.front();
-        stateWindow.pop_front();
-        actionWindow.pop_front();
-      }
-      return ret;
-    }
-    ret->clear();
-  }
-  std::cout << "Failed to find decision in state " << statePtr_->asString() << std::endl;
-  abort();
-}
-
-void PersistedPolicy::readState(State& state_, ActionSharedPtr& actionPtr_) const
+void PersistedPolicy::readState(std::ifstream& input_, State& state_, Action& action_) const
 {
   char buf[BUFFER_SIZE];
   size_t bufferLen = _net.size() + 1;
-  _input.read(buf, bufferLen);
+  input_.read(buf, bufferLen);
   vertex_i vi, vi_end;
   for(boost::tie(vi, vi_end) = boost::vertices(_net.graph()); vi != vi_end; ++vi)
   {
@@ -82,7 +76,7 @@ void PersistedPolicy::readState(State& state_, ActionSharedPtr& actionPtr_) cons
         break;
       case 5:
         state_._active.insert(*vi);
-        actionPtr_->insert(*vi);
+        action_.insert(*vi);
         break;
       case 0:
         break;
@@ -94,25 +88,35 @@ void PersistedPolicy::readState(State& state_, ActionSharedPtr& actionPtr_) cons
   state_._res = buf[_net.size()];
 }
 
-PersistedPolicy::PersistedPolicy(const std::string& file_, const Network& net_)
-  : _net(net_)
+PersistedPolicy::PersistedPolicy(const std::string& persistDir_, const Network& net_)
+  : _net(net_), _persistDir(persistDir_)
 {
-  _input.open(file_.c_str(), std::ios::binary | std::ios::in);
 }
 
-PersistedPolicy::~PersistedPolicy()
+PersistantStoragePolicy::PersistantStoragePolicy(const std::string& persistDir_, const Network& net_)
+  : _net(net_), _persistDir(persistDir_)
 {
-  _input.close();
 }
 
-PersistantStoragePolicy::PersistantStoragePolicy(const std::string& file_, const Network& net_)
-  : _net(net_)
+void PersistantStoragePolicy::operator() (const State& state_, const Action& action_)
 {
-  _output.open(file_.c_str(), std::ios::binary | std::ios::out);
-}
+  OrderedTaskSet theUDC;
+  std::set_union(state_._active.begin(), state_._active.end(),
+                 state_._dormant.begin(), state_._dormant.end(),
+                 std::inserter(theUDC, theUDC.begin()));
+  if(theUDC != _currentUDC)
+  {
+    //ok, copying a set across.. not the end of the world and this isn't a performance critical
+    //section
+    _currentUDC = theUDC;
 
-void PersistantStoragePolicy::operator() (const State& state_, const ActionSharedPtr& actionPtr_)
-{
+    if(_out.is_open())
+    {
+      _out.close();
+    }
+    _out.open(udcFileName(_currentUDC, _persistDir).c_str());
+  }
+
   char buf[BUFFER_SIZE];
   size_t bufferLen = _net.size() + 1;
   std::memset(buf, 0, bufferLen);
@@ -120,12 +124,9 @@ void PersistantStoragePolicy::operator() (const State& state_, const ActionShare
   {
     buf[t] |= 1;
   }
-  if(actionPtr_)
+  BOOST_FOREACH(vertex_t t, action_.asTaskSet())
   {
-    BOOST_FOREACH(vertex_t t, *actionPtr_)
-    {
-      buf[t] |= 4;
-    }
+    buf[t] |= 4;
   }
   BOOST_FOREACH(vertex_t t, state_._interdicted)
   {
@@ -136,12 +137,7 @@ void PersistantStoragePolicy::operator() (const State& state_, const ActionShare
     buf[t] = 3;
   }
   buf[_net.size()] = state_._res;
-  _output.write(buf, bufferLen);
-}
-
-PersistantStoragePolicy::~PersistantStoragePolicy()
-{
-  _output.close();
+  _out.write(buf, bufferLen);
 }
 
 }}

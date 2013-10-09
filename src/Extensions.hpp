@@ -9,7 +9,7 @@ struct ImplementationUncertaintyEvaluator
 {
   double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
                   const Network& net_, 
-                  const State& s, const ActionSharedPtr& candidate,
+                  const State& s, const Action& candidate,
                   double totalRate, size_t budget_,
                   size_t fcode, StateTemplateMap& stmap) const;  
 
@@ -20,7 +20,7 @@ struct CrashingEvaluator
 {
   double evaluate(const UDC& udc, const UDCNetwork& unet_, uvertex_t uv_,
                   const Network& net_, 
-                  const State& s, const ActionSharedPtr& candidate,
+                  const State& s, const Action& candidate,
                   double totalRate, size_t budget_,
                   size_t fcode, StateTemplateMap& stmap) const;  
 };

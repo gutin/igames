@@ -9,7 +9,7 @@ double ImplementationUncertaintyEvaluator::evaluate(const UDC& udc_,
                                   uvertex_t uv_,
                                   const Network& net_, 
                                   const State& state_,
-                                  const ActionSharedPtr& candidate_,
+                                  const Action& candidate_,
                                   double totalRate_, size_t budget_,
                                   size_t fcode_, StateTemplateMap& stmap_) const
 {
@@ -18,19 +18,19 @@ double ImplementationUncertaintyEvaluator::evaluate(const UDC& udc_,
   {
     return 0;
   }
-  if(candidate_->empty())
+  if(candidate_.empty())
   {
     return _stdEval.evaluate(udc_, unet_, uv_, net_, state_, candidate_, totalRate_, budget_, fcode_, stmap_);
   }
   double value = 0;
   const size_t currentTau = tau(udc_, state_, budget_);
-  for(size_t oc = 0; oc < (1L << candidate_->size()); ++oc)
+  for(size_t oc = 0; oc < (1L << candidate_.size()); ++oc)
   {
     double outcomeProb = 1;
                           
     size_t nextTau = currentTau;
     size_t count = 0;
-    BOOST_FOREACH(vertex_t t, *candidate_)
+    BOOST_FOREACH(vertex_t t, candidate_.asTaskSet())
     {
       if(oc & (1L << count))
       {
@@ -57,7 +57,7 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
                                   uvertex_t uv_,
                                   const Network& net_, 
                                   const State& state_,
-                                  const ActionSharedPtr& candidate_,
+                                  const Action& candidate_,
                                   double totalRate_, size_t budget_,
                                   size_t fcode_, StateTemplateMap& stmap_) const
 {
@@ -107,12 +107,12 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
       else
       {
         size_t tav = (1L << (2* stUDC._tasks.size())) *
-                   (budget_ - state_._res + candidate_->size());
+                   (budget_ - state_._res + candidate_.size());
         tav |= (1L << stUDC._tasks.size()) * nextST._activationCode;
         size_t tmp = (~0) - ((1L << stUDC._tasks.size()) - 1L) + nextST._activationCode;
         tav |= ~(tmp);
 
-        BOOST_FOREACH(vertex_t t, *candidate_)
+        BOOST_FOREACH(vertex_t t, candidate_.asTaskSet())
         {
           if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
           {

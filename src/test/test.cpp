@@ -160,10 +160,10 @@ BOOST_AUTO_TEST_SUITE( persistedPolicy )
     
     double optValue = 0;
     {
-      PersistantStoragePolicy psp("bla.policy", n);
+      PersistantStoragePolicy psp("testPolicy", n);
       optValue = DynamicAlgorithm<StandardEvaluator>().execute(n, B, psp);
     }
-    PersistedPolicy ppol("bla.policy", n);
+    PersistedPolicy ppol("testPolicy", n);
     double workedOutVal = StandardDynamicEvaluator().evaluate(n, B, ppol);
 
     BOOST_CHECK_CLOSE(optValue, workedOutVal, 1e-05);
