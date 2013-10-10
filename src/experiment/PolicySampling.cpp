@@ -39,14 +39,14 @@ namespace
   const char* DESCRIPTION = "Interdiction game solver";
 }
 
-void interdictionProbs(const Network& net_, size_t budget_, const std::string& pfile_, size_t nruns_)
+template <class Policy>
+void interdictionProbs(const Network& net_, size_t budget_, const Policy& policy_ , size_t nruns_)
 {
   std::cout << "Performing the experiment" << std::endl; 
-  PersistedPolicy ppol(pfile_, net_);
 
   std::vector<size_t> icounts(net_.size(), 0);
   InterdictionSamplingStateVisitor isv;
-  Simulation<PersistedPolicy, InterdictionSamplingStateVisitor> sim(net_, ppol, isv);
+  Simulation<Policy, InterdictionSamplingStateVisitor> sim(net_, policy_, isv);
   for(size_t i = 0; i < nruns_; ++i)
   {
     std::cout << "Running simulation " << i << std::endl;
@@ -63,6 +63,20 @@ void interdictionProbs(const Network& net_, size_t budget_, const std::string& p
     double prob = double(icounts[i]) / double(nruns_); 
     std::cout << "Probability of interdicting [" <<  i << "] = [" << prob << "]" << std::endl; 
   }
+}
+
+void interdictionProbs(const Network& net_, size_t budget_, const std::string& pfile_, size_t nruns_)
+{
+  PersistedPolicy ppol(pfile_.c_str(), net_);
+  interdictionProbs(net_, budget_, ppol, nruns_);
+}
+
+void interdictionProbs(const Network& net_, size_t budget_, size_t nruns_)
+{
+  double optimalValue;
+  DynamicPolicy optimalPolicy;
+  DynamicAlgorithm<StandardEvaluator>().optimalPolicyAndValue(net_, budget_, optimalPolicy, optimalValue);
+  interdictionProbs(net_, budget_, optimalPolicy, nruns_);
 }
 
 int main(int ac_, char** av_)
@@ -138,8 +152,8 @@ int main(int ac_, char** av_)
   double value = 0;
   if(!vm.count("policy-file"))
   {
-    std::cout << "No policy file given. Try --help" << std::endl;
-    return 1;
+    interdictionProbs(n, budget, nruns);
+    return 0;
   }
 
   std::string pfile = vm["policy-file"].as<std::string>();
