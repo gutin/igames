@@ -435,6 +435,7 @@ double StandardEvaluator::evaluate(const UDC& udc_,
     return value;
   }
 
+
   BOOST_FOREACH(vertex_t u, state_._active)
   {
     double nextVal = 0;
@@ -452,13 +453,15 @@ double StandardEvaluator::evaluate(const UDC& udc_,
       size_t tmp = (~0) - ((1L << stUDC._tasks.size()) - 1L) + st._activationCode;
       tav |= ~(tmp);
 
-      BOOST_FOREACH(vertex_t t, candidate_.asTaskSet())
+      size_t intMask = candidate_.interdictionMask(stUDC);
+      /*BOOST_FOREACH(vertex_t t, candidate_.asTaskSet())
       {
         if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
         {
           tav &= ~(1L << stUDC._activity2UDCIndex[t]);
         }
-      }
+      }*/
+      tav &= ~intMask;
       BOOST_FOREACH(vertex_t t, state_._interdicted)
       {
         if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
