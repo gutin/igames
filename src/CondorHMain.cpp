@@ -10,15 +10,17 @@
 #include <iostream>
 #include <sstream>
 
+#include <boost/tokenizer.hpp>
+
 using namespace ig::core;
 
 int main(int ac_, char** av_)
 {
   size_t budget;
   Network n;
-  if(ac_ != 5)
+  if(ac_ < 5)
   {
-    std::cout << "<rcp-file> <budget> [determ|static] [impunc]" << std::endl;
+    std::cout << "<rcp-file> <budget> [determ|static] [impunc] [taskList]" << std::endl;
     return 1;
   }
   
@@ -38,7 +40,21 @@ int main(int ac_, char** av_)
   n.import(rcpfile);
   if(determOrStatic == "determ")
   {
-    deterministicPolicy(n, budget, policy, impunc);
+    if(ac_ > 5)
+    {
+      std::string taskListStr = av_[5];
+      boost::char_separator<char> sep(",");
+      boost::tokenizer<boost::char_separator<char> > tokens(taskListStr, sep);
+      BOOST_FOREACH(const std::string& taskStr, tokens)
+      {
+        std::cout << "Will interdict " << taskStr << std::endl;
+        policy << atoi(taskStr.c_str());
+      }
+    }
+    else
+    {
+      deterministicPolicy(n, budget, policy, impunc);
+    }
     if(impunc)
     {
       //USe an explicit Kulkarni solver to get the right value

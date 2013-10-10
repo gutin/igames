@@ -7,6 +7,7 @@
 #include "DynamicEvaluator.hpp"
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
+#include <boost/tokenizer.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -23,6 +24,7 @@ namespace
   const char* RCPFILE_ARG_NAME = "rcp-file";
   const char* STATIC_OPTION = "static";
   const char* DETERMINISTIC_OPTION = "determ";
+  const char* SELECTEVAL_OPTION = "select";
 
   const char* DESCRIPTION = "Heuristic interdiction game solver";
 }
@@ -44,7 +46,8 @@ int main(int ac_, char** av_)
     (STATIC_OPTION, "Use the stochastic static solution?")
     ("impunc", "Solve with implementation uncertainty?")
     (DETERMINISTIC_OPTION, "Use the deterministic solution?")
-    (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
+    (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use")
+    (SELECTEVAL_OPTION, po::value<std::string>(), "Evaluate with interdicited tasks (a comma separated list)");
 
   po::variables_map vm;
   po::store(po::parse_command_line(ac_, av_, desc), vm);
@@ -63,6 +66,7 @@ int main(int ac_, char** av_)
 
   Network n;
   std::string rcpFile;
+
 
   if(vm.count(SIZE_ARG_NAME) && vm.count(INSTANCE_ARG_NAME) &&
      vm.count(ORDER_STRENGTH_ARG_NAME) && vm.count(RCPBASE_ARG_NAME))
@@ -101,9 +105,24 @@ int main(int ac_, char** av_)
   //Work out which algorithm to run...
   double value = 0; 
   StaticPolicy policy;
+
   if(vm.count(DETERMINISTIC_OPTION))
   {
-    deterministicPolicy(n, budget, policy, impunc);
+    if(vm.count(SELECTEVAL_OPTION))
+    {
+      std::string taskListStr = vm[SELECTEVAL_OPTION].as<std::string>();
+      boost::char_separator<char> sep(",");
+      boost::tokenizer<boost::char_separator<char> > tokens(taskListStr, sep);
+      BOOST_FOREACH(const std::string& taskStr, tokens)
+      {
+        std::cout << "Will interdict " << taskStr << std::endl;
+        policy << atoi(taskStr.c_str());
+      }
+    }
+    else
+    {
+      deterministicPolicy(n, budget, policy, impunc);
+    }
     if(impunc)
     {
       //USe an explicit Kulkarni solver to get the right value
