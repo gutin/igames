@@ -407,4 +407,16 @@ double staticStochasticPolicy(const Network& net_, size_t budget_, StaticPolicy&
   return 0;
 }
 
+void dumpStaticStochasticMILP(const Network& net_, size_t budget_, const std::string& lpFile_)
+{
+  IloEnv env;
+  IloModel model(env);
+
+  IloBoolVarArray theta(env); 
+  populateStaticStochasticModel(net_, budget_, env, model, theta); 
+
+  IloCplex cplex(model);
+  cplex.exportModel(lpFile_.c_str());
+}
+
 }}

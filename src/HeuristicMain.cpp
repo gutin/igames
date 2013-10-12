@@ -23,6 +23,7 @@ namespace
   const char* RCPBASE_ARG_NAME = "rcp-base";
   const char* RCPFILE_ARG_NAME = "rcp-file";
   const char* STATIC_OPTION = "static";
+  const char* DUMP_STATIC_OPTION = "dump-static";
   const char* DETERMINISTIC_OPTION = "determ";
   const char* SELECTEVAL_OPTION = "select";
 
@@ -44,6 +45,7 @@ int main(int ac_, char** av_)
     (RCPBASE_ARG_NAME, po::value<std::string>(), "Base directory with .rcp files")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
     (STATIC_OPTION, "Use the stochastic static solution?")
+    (DUMP_STATIC_OPTION, po::value<std::string>(), "Dump the stochastic static problem as the given .lp file")
     ("impunc", "Solve with implementation uncertainty?")
     (DETERMINISTIC_OPTION, "Use the deterministic solution?")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use")
@@ -146,6 +148,10 @@ int main(int ac_, char** av_)
   else if(vm.count(STATIC_OPTION))
   {
     value = staticStochasticPolicy(n, budget, policy);
+  }
+  else if(vm.count(DUMP_STATIC_OPTION))
+  {
+    dumpStaticStochasticMILP(n, budget, vm[DUMP_STATIC_OPTION].as<std::string>());
   }
   else
   {

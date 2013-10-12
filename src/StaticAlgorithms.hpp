@@ -45,6 +45,8 @@ double deterministicPolicy(const Network& net_, size_t budget_, StaticPolicy& po
 
 double staticStochasticPolicy(const Network& net_, size_t budget_, StaticPolicy& policy_);
 
+void dumpStaticStochasticMILP(const Network& net_, size_t budget_, const std::string& lpFile_);
+
 }}
 
 #endif
