@@ -9,6 +9,7 @@
 #include <limits>
 #include <ctime>
 #include <cmath>
+#include <iterator>
 
 namespace {
 
@@ -31,7 +32,7 @@ struct NullStateVisitor
   {}
 };
 
-template <class InterdictionPolicy, class StateVisitor = NullStateVisitor, bool impunc = false>
+template <class InterdictionPolicy, class StateVisitor = NullStateVisitor, bool impunc = false, bool logInfo = false>
 class Simulation
 {
 public:
@@ -40,14 +41,14 @@ public:
 
   double run(size_t budget_);
 
+  StateVisitor& _visitor;
 private:
   const Network& _net;
   const InterdictionPolicy& _policy;
-  StateVisitor& _visitor;
 };
 
-template <class IP, class SV, bool impunc>
-double Simulation<IP, SV, impunc>::run(size_t buget_)
+template <class IP, class SV, bool impunc, bool logInfo>
+double Simulation<IP, SV, impunc, logInfo>::run(size_t buget_)
 {
   StateSharedPtr statePtr(new State);
   ig::core::util::startingState(_net, buget_, *statePtr);
@@ -58,6 +59,13 @@ double Simulation<IP, SV, impunc>::run(size_t buget_)
   {
     // Get the action
     ActionSharedPtr actionPtr = _policy.at(*statePtr);
+    if(logInfo)
+    {
+      std::cout << "Action in state " << statePtr->asString() << " is [";
+      std::copy(actionPtr->begin(), actionPtr->end(),
+                std::ostream_iterator<vertex_t>(std::cout, " "));
+      std::cout << "]" << std::endl;
+    }
     
     // Do something with this information
     _visitor.visit(statePtr, actionPtr);
@@ -100,6 +108,10 @@ double Simulation<IP, SV, impunc>::run(size_t buget_)
     }
     finished.insert(finishing);
     makespan += minDuration;
+    if(logInfo)
+    {
+      std::cout << "Task " << finishing << " completed after " << minDuration << " weeks." << std::endl;
+    }
     statePtr = ig::core::util::nextState(_net, *statePtr, effectiveActionPtr, finished, finishing, actionPtr->size());
   }
   return makespan;

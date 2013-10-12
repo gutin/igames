@@ -39,25 +39,38 @@ namespace
   const char* DESCRIPTION = "Interdiction game solver";
 }
 
+template <class Policy, class Simulation>
+void runSimulations(size_t budget_, const Policy& policy_, Simulation& sim_, size_t nruns_, std::vector<size_t>& icounts) 
+{
+  for(size_t i = 0; i < nruns_; ++i)
+  {
+    std::cout << "Running simulation " << i << std::endl;
+    sim_.run(budget_);
+    BOOST_FOREACH(vertex_t t, sim_._visitor._interdictedTasks)
+    {
+      icounts[t]++;
+    }
+    sim_._visitor._interdictedTasks.clear(); 
+  }
+}
+
 template <class Policy>
-void interdictionProbs(const Network& net_, size_t budget_, const Policy& policy_ , size_t nruns_)
+void interdictionProbs(const Network& net_, size_t budget_, const Policy& policy_ , size_t nruns_, bool verbose_)
 {
   std::cout << "Performing the experiment" << std::endl; 
 
   std::vector<size_t> icounts(net_.size(), 0);
   InterdictionSamplingStateVisitor isv;
-  Simulation<Policy, InterdictionSamplingStateVisitor> sim(net_, policy_, isv);
-  for(size_t i = 0; i < nruns_; ++i)
+  if(verbose_)
   {
-    std::cout << "Running simulation " << i << std::endl;
-    sim.run(budget_);
-    BOOST_FOREACH(vertex_t t, isv._interdictedTasks)
-    {
-      icounts[t]++;
-    }
-    isv._interdictedTasks.clear(); 
+    Simulation<Policy, InterdictionSamplingStateVisitor, false, true> sim(net_, policy_, isv);
+    runSimulations(budget_, policy_, sim, nruns_, icounts);
   }
-
+  else
+  {
+    Simulation<Policy, InterdictionSamplingStateVisitor> sim(net_, policy_, isv);
+    runSimulations(budget_, policy_, sim, nruns_, icounts);
+  }
   for(size_t i = 0; i < icounts.size(); ++i)
   {
     double prob = double(icounts[i]) / double(nruns_); 
@@ -65,18 +78,18 @@ void interdictionProbs(const Network& net_, size_t budget_, const Policy& policy
   }
 }
 
-void interdictionProbs(const Network& net_, size_t budget_, const std::string& pfile_, size_t nruns_)
+void interdictionProbs(const Network& net_, size_t budget_, const std::string& pfile_, size_t nruns_, bool verbose_)
 {
   PersistedPolicy ppol(pfile_.c_str(), net_);
-  interdictionProbs(net_, budget_, ppol, nruns_);
+  interdictionProbs(net_, budget_, ppol, nruns_, verbose_);
 }
 
-void interdictionProbs(const Network& net_, size_t budget_, size_t nruns_)
+void interdictionProbs(const Network& net_, size_t budget_, size_t nruns_, bool verbose_)
 {
   double optimalValue;
   DynamicPolicy optimalPolicy;
   DynamicAlgorithm<StandardEvaluator>().optimalPolicyAndValue(net_, budget_, optimalPolicy, optimalValue);
-  interdictionProbs(net_, budget_, optimalPolicy, nruns_);
+  interdictionProbs(net_, budget_, optimalPolicy, nruns_, verbose_);
 }
 
 int main(int ac_, char** av_)
@@ -95,6 +108,7 @@ int main(int ac_, char** av_)
     (RCPBASE_ARG_NAME, po::value<std::string>(), "Base directory with .rcp files")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
     ("policy-file,P",po::value<std::string>(), "Persistence file to read from")
+    ("verbose,V","Should print detailed info?")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
 
   po::variables_map vm;
@@ -152,11 +166,11 @@ int main(int ac_, char** av_)
   double value = 0;
   if(!vm.count("policy-file"))
   {
-    interdictionProbs(n, budget, nruns);
+    interdictionProbs(n, budget, nruns, vm.count("verbose"));
     return 0;
   }
 
   std::string pfile = vm["policy-file"].as<std::string>();
-  interdictionProbs(n, budget, pfile, nruns);
+  interdictionProbs(n, budget, pfile, nruns, vm.count("verbose"));
   return 0;
 }
