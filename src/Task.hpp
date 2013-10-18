@@ -29,7 +29,13 @@ struct Task
   /*
    * Minimum investment of the single renewable resource into this task
    */
-  const static double MIN_INVESTMENT = 1;
+  const static double minInvestment() { return 1; }
+
+  /*
+   * Maximum possible investment of the single renewable resource into this task
+   */
+  const static double maxInvestment() { return 1.5; }
+
 };
 
 }}

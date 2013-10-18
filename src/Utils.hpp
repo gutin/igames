@@ -17,9 +17,7 @@ inline size_t numBitsSet(int i)
 
 inline double rate(vertex_t t, const Network& net_, const State& state_, const ActionSharedPtr& actionPtr_)
 {
-  double delayedRate = net_.graph()[t]._delta;
-  double normalRate = net_.graph()[t]._nu;
-  if(actionPtr_->find(t) != actionPtr_->end() || state_._interdicted.find(t) != state_._interdicted.end())
+  if((actionPtr_ && actionPtr_->find(t) != actionPtr_->end()) || state_._interdicted.find(t) != state_._interdicted.end())
     return net_.graph()[t]._delta;
   return net_.graph()[t]._nu;
 }

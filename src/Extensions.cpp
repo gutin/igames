@@ -76,14 +76,10 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
   
   // The following is a 'helper quantity' - we work out what would be the total cost of renewable rsource if we invested the minimum possible
   // in each task
-  double residualCost = 0;
-  BOOST_FOREACH(vertex_t t, state_._active)
-  {
-    residualCost += Task::MIN_INVESTMENT * TASK_ATTR(t, _crashingCost);
-  }
-
   // Begin the pointwise minimization
   double minValue = std::numeric_limits<double>::max();
+  
+  double crashingAmount = Task::maxInvestment();
   BOOST_FOREACH(vertex_t t, state_._active)
   {
     // Enumerator and denominator in the final expression
@@ -91,8 +87,6 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
 
     // If the proliferator wuld put as much as possible into task 't' it would cost
     // ('total renewable resource' - ('the above helper quantity' - 'min investment cost into t')) * 'unit cost of crashing t'
-    double crashingAmount = (unet_._maxParallel - residualCost + Task::MIN_INVESTMENT * TASK_ATTR(t, _crashingCost)) / TASK_ATTR(t, _crashingCost);  
-
     double totalRenewableResourceExpended = 0;
     BOOST_FOREACH(vertex_t u, state_._active)
     {
@@ -134,9 +128,9 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
       }
 
       // Found the value in the subsequnt state and xi is the amount of RR put in
-      double xi = t == u ? crashingAmount : Task::MIN_INVESTMENT;
+      double xi = t == u ? crashingAmount : Task::minInvestment();
       totalRenewableResourceExpended += xi * TASK_ATTR(u, _crashingCost);
-//      assert(xi >= Task::MIN_INVESTMENT - 1e-04); 
+//      assert(xi >= Task::minInvestment() - 1e-04); 
 
       double rate = util::rate(u, net_, state_, candidate_);
 
@@ -144,7 +138,7 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
       enu += nextVal * rate * xi;
       denom += rate * xi; 
     }
-    assert(std::abs(totalRenewableResourceExpended - unet_._maxParallel) < 1e-3);
+    assert(totalRenewableResourceExpended <= state_._active.size() + 1 + 1e-3);
     assert(denom > 0);
     // THe final expression....
     double val = enu / denom;

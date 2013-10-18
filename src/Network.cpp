@@ -170,6 +170,8 @@ bool Network::import(const std::string& file_, bool delaysFromFile_)
     const_cast<Task&>(_g[*vi])._crashingCost = crashingCostGenerator();
     std::cout << "Task " << *vi << " has a unit crashing cost of " << _g[*vi]._crashingCost << std::endl;
   }
+  std::ofstream gout("thegraph.dot");
+  boost::write_graphviz(gout, _g);
   return true;
 }
 

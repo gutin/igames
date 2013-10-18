@@ -47,6 +47,7 @@ int main(int ac_, char** av_)
     (STATIC_OPTION, "Use the stochastic static solution?")
     (DUMP_STATIC_OPTION, po::value<std::string>(), "Dump the stochastic static problem as the given .lp file")
     ("impunc", "Solve with implementation uncertainty?")
+    ("crash", "Solve with crashing?")
     (DETERMINISTIC_OPTION, "Use the deterministic solution?")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use")
     (SELECTEVAL_OPTION, po::value<std::string>(), "Evaluate with interdicited tasks (a comma separated list)");
@@ -132,17 +133,24 @@ int main(int ac_, char** av_)
     }
     else
     {
-      // Now set any tasks in the interdiction pattern to their delayed rate and then 'solve'
-      // the efficient dynamic algorithm with 0 budget
-      vertex_i vi, vi_end;
-      for(boost::tie(vi, vi_end) = boost::vertices(n.graph()); vi != vi_end; ++vi)
+      if(vm.count("crash"))
       {
-        if(policy._targets.find(*vi) != policy._targets.end())
-        {
-          const_cast<Task&>(n.graph()[*vi])._nu = n.graph()[*vi]._delta;
-        }
+        value = FastEvaluator<StaticPolicy, CrashingEvaluator>(policy).evaluate(n, budget); 
       }
-      value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, 0);
+      else
+      {
+        // Now set any tasks in the interdiction pattern to their delayed rate and then 'solve'
+        // the efficient dynamic algorithm with 0 budget
+        vertex_i vi, vi_end;
+        for(boost::tie(vi, vi_end) = boost::vertices(n.graph()); vi != vi_end; ++vi)
+        {
+          if(policy._targets.find(*vi) != policy._targets.end())
+          {
+            const_cast<Task&>(n.graph()[*vi])._nu = n.graph()[*vi]._delta;
+          }
+        }
+        value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, 0);
+      }
     }
   }
   else if(vm.count(STATIC_OPTION))

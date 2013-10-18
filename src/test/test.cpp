@@ -213,3 +213,21 @@ BOOST_AUTO_TEST_SUITE( persistedPolicy )
     BOOST_CHECK_CLOSE(optValue, mean, 1);
   }
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE( crashingGame )
+
+  BOOST_AUTO_TEST_CASE(testCrashingGameCorrectnessForFastEvaluator)
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.8/Pat12.rcp");
+    
+    double optValue = 0;
+    DynamicPolicy policy;
+    DynamicAlgorithm<CrashingEvaluator>().optimalPolicyAndValue(n, B, policy, optValue);
+
+    double fastMeanVal = FastEvaluator<DynamicPolicy, CrashingEvaluator>(policy).evaluate(n, B);
+    BOOST_CHECK_CLOSE(optValue, fastMeanVal, 1e-4);
+  }
+
+BOOST_AUTO_TEST_SUITE_END()
