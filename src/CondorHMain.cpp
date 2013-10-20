@@ -58,15 +58,18 @@ int main(int ac_, char** av_)
     if(impunc)
     {
       //USe an explicit Kulkarni solver to get the right value
+      std::cout << "Solving the determ impunc" << std::endl;
       value = FastEvaluator<StaticPolicy, ImplementationUncertaintyEvaluator>(policy).evaluate(n, budget);
     }
     else if(crash)
     {
       //USe an explicit Kulkarni solver to get the right value
+      std::cout << "Solving the determ crashing" << std::endl;
       value = FastEvaluator<StaticPolicy, CrashingEvaluator>(policy).evaluate(n, budget);
     }
     else
     {
+      std::cout << "Solving the determ standard" << std::endl;
       // Now set any tasks in the interdiction pattern to their delayed rate and then 'solve'
       // the efficient dynamic algorithm with 0 budget
       vertex_i vi, vi_end;
@@ -80,19 +83,22 @@ int main(int ac_, char** av_)
       value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, 0);
     }
   }
-  else if(heurType == "static")
+  else if(determOrStatic == "static")
   {
     StaticPolicy sp;
     if(impunc)
     {
+      std::cout << "Solving the static impunc" << std::endl;
       value = staticStochasticPolicyHeuristic<ImplementationUncertaintyEvaluator>(n, budget,sp);
     }
     else if(crash)
     {
+      std::cout << "Solving the static crashing" << std::endl;
       value = staticStochasticPolicyHeuristic<CrashingEvaluator>(n, budget,sp);
     }
     else
     {
+      std::cout << "Solving the static standard" << std::endl;
       value = staticStochasticPolicyHeuristic<StandardEvaluator>(n, budget,sp);
     }
   }
