@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_SUITE( newStaticHeuristicShouldBeVeryGood )
     double staticValue = staticStochasticPolicy(n, B, staticPolicy);
     
     StaticPolicy heurStaticPolicy;
-    double heurStaticValue = staticStochasticPolicyHeuristic(n, B, heurStaticPolicy);
+    double heurStaticValue = staticStochasticPolicyHeuristic<StandardEvaluator>(n, B, heurStaticPolicy);
     
     BOOST_CHECK_CLOSE(staticValue, heurStaticValue, 1e-4);
   }

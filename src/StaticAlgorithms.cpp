@@ -13,18 +13,6 @@ const IloNum M = 10000;
 
 using namespace ig::core;
 
-struct VertexComp 
-{
-  const Network& net;
-
-  VertexComp(const Network& net) : net(net) {}
-
-  bool operator()(vertex_t one, vertex_t other)
-  {
-    return net.graph()[one].expNormal() > net.graph()[other].expNormal();  
-  }
-};
-
 void populateStaticStochasticModel(const Network& net_, size_t budget_, IloEnv& env, IloModel& model, IloBoolVarArray theta)
 {
   // Need information from antichains in the current implementation
@@ -430,63 +418,6 @@ void dumpStaticStochasticMILP(const Network& net_, size_t budget_, const std::st
 
   IloCplex cplex(model);
   cplex.exportModel(lpFile_.c_str());
-}
-
-double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, StaticPolicy& policy_)
-{
-  TaskList nLongestRunning;
-  vertex_i vi, vi_end;
-  boost::tie(vi, vi_end) = boost::vertices(net_.graph());
-  std::copy(vi, vi_end, std::inserter(nLongestRunning, nLongestRunning.begin()));
-  std::sort(nLongestRunning.begin(), nLongestRunning.end(), VertexComp(net_));
-  nLongestRunning.resize(budget_ + 1);
-  return staticStochasticPolicyHeuristic(net_, budget_, nLongestRunning, policy_);
-}
-
-double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, const TaskList& searchSpace_, StaticPolicy& policy_)
-{
-  double optimalHeuristicValue = std::numeric_limits<double>::min();
-  OrderedTaskSetPtr bestChoice;
-  for(size_t bits = 0; bits < (1L << searchSpace_.size()); ++bits)
-  {
-    if(util::numBitsSet(bits) != budget_)
-      continue;
-    OrderedTaskSetPtr chosen(new OrderedTaskSet);
-    for(size_t b = 0; b < searchSpace_.size(); ++b)
-    {
-      if((1L << b) & bits)
-      {
-        vertex_t t = searchSpace_[b];
-        chosen->insert(searchSpace_[b]);
-        
-        // A cute little hack where we swap the nu and delta temporarily and eval with 0 budget..
-        std::swap(const_cast<double&>(net_.graph()[t]._delta), const_cast<double&>(net_.graph()[t]._nu));
-      }
-    }
-    double value = DynamicAlgorithm<StandardEvaluator>().optimalValue(net_, 0);
-    if(value > optimalHeuristicValue)
-    {
-      std::cout << "Improving to " << value << std::endl;
-      std::cout << "with: ";
-      BOOST_FOREACH(vertex_t c, *chosen)
-      {
-        std::cout << c << " ";
-      }
-      std::cout << std::endl;
-      optimalHeuristicValue = value;
-      bestChoice = chosen;
-    }
-    // undo the effects of the hack
-    BOOST_FOREACH(vertex_t t, *chosen)
-    {
-      std::swap(const_cast<double&>(net_.graph()[t]._delta), const_cast<double&>(net_.graph()[t]._nu));
-    }
-  }
-  BOOST_FOREACH(vertex_t t, *bestChoice)
-  {
-    policy_ << t;
-  }
-  return optimalHeuristicValue;
 }
 
 }}

@@ -157,7 +157,12 @@ int main(int ac_, char** av_)
   }
   else if(vm.count(STATIC_HEURISTIC_OPTION))
   {
-    value = staticStochasticPolicyHeuristic(n, budget, policy);
+    if(vm.count("crash"))
+      value = staticStochasticPolicyHeuristic<CrashingEvaluator>(n, budget, policy);
+    else if(vm.count("impunc"))
+      value = staticStochasticPolicyHeuristic<ImplementationUncertaintyEvaluator>(n, budget, policy);
+    else
+      value = staticStochasticPolicyHeuristic<StandardEvaluator>(n, budget, policy);
   }
   else if(vm.count(STATIC_OPTION))
   {
