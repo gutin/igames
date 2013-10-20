@@ -82,7 +82,19 @@ int main(int ac_, char** av_)
   }
   else if(heurType == "static")
   {
-    value = staticStochasticPolicy(n, budget, policy);
+    StaticPolicy sp;
+    if(impunc)
+    {
+      value = staticStochasticPolicyHeuristic<ImplementationUncertaintyEvaluator>(n, budget,sp);
+    }
+    else if(crash)
+    {
+      value = staticStochasticPolicyHeuristic<CrashingEvaluator>(n, budget,sp);
+    }
+    else
+    {
+      value = staticStochasticPolicyHeuristic<StandardEvaluator>(n, budget,sp);
+    }
   }
   else 
   {
