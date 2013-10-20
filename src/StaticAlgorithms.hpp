@@ -101,6 +101,17 @@ double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, Stat
   std::copy(vi, vi_end, std::inserter(nLongestRunning, nLongestRunning.begin()));
   std::sort(nLongestRunning.begin(), nLongestRunning.end(), VertexComp(net_));
   nLongestRunning.resize(budget_ + 1);
+
+  //now add anything from determ to make sure were not worse than that
+  StaticPolicy determPolicy;
+  deterministicPolicy(net_, budget_,  determPolicy);
+  BOOST_FOREACH(vertex_t t, determPolicy._targets)
+  {
+    if(std::find(nLongestRunning.begin(), nLongestRunning.end(), t) == nLongestRunning.end())
+    {
+      nLongestRunning.push_back(t);
+    }
+  }
   return staticStochasticPolicyHeuristic<Evaluator>(net_, budget_, nLongestRunning, policy_);
 }
 
