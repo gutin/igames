@@ -39,6 +39,7 @@ namespace ig { namespace core {
 
   typedef boost::unordered_set<vertex_t> TaskSet;
   typedef std::set<vertex_t> OrderedTaskSet;
+  typedef boost::shared_ptr<OrderedTaskSet> OrderedTaskSetPtr;
   typedef OrderedTaskSet Action;
   typedef boost::shared_ptr<Action> ActionSharedPtr;
 

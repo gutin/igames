@@ -231,3 +231,22 @@ BOOST_AUTO_TEST_SUITE( crashingGame )
   }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE( newStaticHeuristicShouldBeVeryGood )
+
+  BOOST_AUTO_TEST_CASE(testNetworkWithAdvantageForStatic)
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.5/Pat57.rcp");
+    
+    StaticPolicy staticPolicy;
+    double staticValue = staticStochasticPolicy(n, B, staticPolicy);
+    
+    StaticPolicy heurStaticPolicy;
+    double heurStaticValue = staticStochasticPolicyHeuristic(n, B, heurStaticPolicy);
+    
+    BOOST_CHECK_CLOSE(staticValue, heurStaticValue, 1e-4);
+  }
+
+BOOST_AUTO_TEST_SUITE_END()

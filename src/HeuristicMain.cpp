@@ -23,6 +23,7 @@ namespace
   const char* RCPBASE_ARG_NAME = "rcp-base";
   const char* RCPFILE_ARG_NAME = "rcp-file";
   const char* STATIC_OPTION = "static";
+  const char* STATIC_HEURISTIC_OPTION = "heurstatic";
   const char* DUMP_STATIC_OPTION = "dump-static";
   const char* DETERMINISTIC_OPTION = "determ";
   const char* SELECTEVAL_OPTION = "select";
@@ -45,6 +46,7 @@ int main(int ac_, char** av_)
     (RCPBASE_ARG_NAME, po::value<std::string>(), "Base directory with .rcp files")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
     (STATIC_OPTION, "Use the stochastic static solution?")
+    (STATIC_HEURISTIC_OPTION, "Use the heuristic stochastic static solution?")
     (DUMP_STATIC_OPTION, po::value<std::string>(), "Dump the stochastic static problem as the given .lp file")
     ("impunc", "Solve with implementation uncertainty?")
     ("crash", "Solve with crashing?")
@@ -152,6 +154,10 @@ int main(int ac_, char** av_)
         value = DynamicAlgorithm<StandardEvaluator>().optimalValue(n, 0);
       }
     }
+  }
+  else if(vm.count(STATIC_HEURISTIC_OPTION))
+  {
+    value = staticStochasticPolicyHeuristic(n, budget, policy);
   }
   else if(vm.count(STATIC_OPTION))
   {
