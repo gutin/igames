@@ -32,6 +32,7 @@ struct StateCollection
       _statesAggregated.push_back(state_);
   }
   std::vector<State> _statesAggregated;
+
 };
 
 // Another trick to make sure we don't do extra work while aggregating states
@@ -76,12 +77,14 @@ template <class Eval>
 struct StaticEvalTraits
 {
   typedef VertexComp CompType;
+  enum { impunc_flag = 0 };
 };
 
 template <>
 struct StaticEvalTraits<class ImplementationUncertaintyEvaluator>
 {
   typedef ImpuncVertexComp CompType;
+  enum { impunc_flag = 1 };
 };
 
 template <class Evaluator>
@@ -130,7 +133,7 @@ double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, Stat
 
   //now add anything from determ to make sure were not worse than that
   StaticPolicy determPolicy;
-  deterministicPolicy(net_, budget_,  determPolicy);
+  deterministicPolicy(net_, budget_,  determPolicy, StaticEvalTraits<Evaluator>::impunc_flag);
   BOOST_FOREACH(vertex_t t, determPolicy._targets)
   {
     if(std::find(nLongestRunning.begin(), nLongestRunning.end(), t) == nLongestRunning.end())
