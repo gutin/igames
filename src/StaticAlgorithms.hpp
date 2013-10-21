@@ -58,6 +58,32 @@ struct VertexComp
   }
 };
 
+struct ImpuncVertexComp : VertexComp
+{
+  bool operator()(vertex_t one, vertex_t other)
+  {
+    const Task& oneTask = net.graph()[one];
+    const Task& otherTask = net.graph()[other];
+    return (oneTask._probDelaySuccess * oneTask.expNormal()) > (otherTask._probDelaySuccess * otherTask.expNormal());  
+  }
+
+  ImpuncVertexComp(const Network& net_) : VertexComp(net_) { std::cout << "Using the IMPUNC vertex comparator" << std::endl; }
+};
+
+class ImplementationUncertaintyEvaluator;
+
+template <class Eval>
+struct StaticEvalTraits
+{
+  typedef VertexComp CompType;
+};
+
+template <>
+struct StaticEvalTraits<class ImplementationUncertaintyEvaluator>
+{
+  typedef ImpuncVertexComp CompType;
+};
+
 template <class Evaluator>
 double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, const TaskList& searchSpace_, StaticPolicy& policy_)
 {
@@ -99,7 +125,7 @@ double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, Stat
   vertex_i vi, vi_end;
   boost::tie(vi, vi_end) = boost::vertices(net_.graph());
   std::copy(vi, vi_end, std::inserter(nLongestRunning, nLongestRunning.begin()));
-  std::sort(nLongestRunning.begin(), nLongestRunning.end(), VertexComp(net_));
+  std::sort(nLongestRunning.begin(), nLongestRunning.end(), typename StaticEvalTraits<Evaluator>::CompType(net_));
   nLongestRunning.resize(budget_ + 1);
 
   //now add anything from determ to make sure were not worse than that
