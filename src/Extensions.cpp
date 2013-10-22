@@ -66,84 +66,63 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
   {
     return 0;
   }
-  // The value of a state-decision pair in the crashing game is worked out as follows:
-  // We know that the optimal renewable resource allocation for the proliferator is a corner-point of a polyhedron
-  // So we iterate through each task in the current active set:
-  //  1. Pretend that the proliferator puts as much as he can into it (taking into account min. investment into each task constraint)
-  //  2. Lets also assume that the exact amount of the renewable resource is the the max number of tasks that can run in parallel
-  //  3. So based on this information we know what all the possibilities are for the scaling of each task's duration
-  // We minimize over all valus of these possiblities and essentially solve the proliferator's minimization subproblem
-  
-  // The following is a 'helper quantity' - we work out what would be the total cost of renewable rsource if we invested the minimum possible
-  // in each task
-  // Begin the pointwise minimization
   double minValue = std::numeric_limits<double>::max();
   
-  double crashingAmount = Task::maxInvestment();
+  double enumerator = 1;
+  std::vector<double> nextStateVals;
+  nextStateVals.reserve(state_._active.size());
+  BOOST_FOREACH(vertex_t u, state_._active)
+  {
+    // optimised way of finding the value in the subsequent state
+    double nextVal = 0;
+    StateTemplate& nextST = nextTemplate(u, udc_, uv_, stmap_, net_, unet_, fcode_);
+    const UDC& stUDC = unet_[nextST._udc]; 
+    if(stUDC._taskSet.find(net_.end()) != stUDC._taskSet.end())
+    {
+      nextVal = 0;
+    }
+    else
+    {
+      size_t tav = (1L << (2* stUDC._tasks.size())) *
+                 (budget_ - state_._res + candidate_->size());
+      tav |= (1L << stUDC._tasks.size()) * nextST._activationCode;
+      size_t tmp = (~0) - ((1L << stUDC._tasks.size()) - 1L) + nextST._activationCode;
+      tav |= ~(tmp);
+
+      BOOST_FOREACH(vertex_t t, *candidate_)
+      {
+        if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
+        {
+          tav &= ~(1L << stUDC._activity2UDCIndex[t]);
+        }
+      }
+      BOOST_FOREACH(vertex_t t, state_._interdicted)
+      {
+        if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
+        {
+          tav &= ~(1L << stUDC._activity2UDCIndex[t]);
+        }
+      }
+      if(stUDC._taskSet.find(u) != stUDC._taskSet.end())
+      {
+        tav &= ~(1L << stUDC._activity2UDCIndex[u]);
+      }
+      nextVal = stUDC.value(tav);
+    }
+
+    double rate = util::rate(u, net_, state_, candidate_);
+    enumerator += nextVal * rate * Task::minInvestment();
+    nextStateVals.push_back(nextVal);
+  }
+
+  size_t nextStateValIdx = 0;
   BOOST_FOREACH(vertex_t t, state_._active)
   {
-    // Enumerator and denominator in the final expression
-    double enu = 1, denom = 0;
-
-    // If the proliferator wuld put as much as possible into task 't' it would cost
-    // ('total renewable resource' - ('the above helper quantity' - 'min investment cost into t')) * 'unit cost of crashing t'
-    double totalRenewableResourceExpended = 0;
-    BOOST_FOREACH(vertex_t u, state_._active)
-    {
-      // optimised way of finding the value in the subsequent state
-      double nextVal = 0;
-      StateTemplate& nextST = nextTemplate(u, udc_, uv_, stmap_, net_, unet_, fcode_);
-      const UDC& stUDC = unet_[nextST._udc]; 
-      if(stUDC._taskSet.find(net_.end()) != stUDC._taskSet.end())
-      {
-        nextVal = 0;
-      }
-      else
-      {
-        size_t tav = (1L << (2* stUDC._tasks.size())) *
-                   (budget_ - state_._res + candidate_->size());
-        tav |= (1L << stUDC._tasks.size()) * nextST._activationCode;
-        size_t tmp = (~0) - ((1L << stUDC._tasks.size()) - 1L) + nextST._activationCode;
-        tav |= ~(tmp);
-
-        BOOST_FOREACH(vertex_t t, *candidate_)
-        {
-          if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
-          {
-            tav &= ~(1L << stUDC._activity2UDCIndex[t]);
-          }
-        }
-        BOOST_FOREACH(vertex_t t, state_._interdicted)
-        {
-          if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
-          {
-            tav &= ~(1L << stUDC._activity2UDCIndex[t]);
-          }
-        }
-        if(stUDC._taskSet.find(u) != stUDC._taskSet.end())
-        {
-          tav &= ~(1L << stUDC._activity2UDCIndex[u]);
-        }
-        nextVal = stUDC.value(tav);
-      }
-
-      // Found the value in the subsequnt state and xi is the amount of RR put in
-      double xi = t == u ? crashingAmount : Task::minInvestment();
-      totalRenewableResourceExpended += xi * TASK_ATTR(u, _crashingCost);
-//      assert(xi >= Task::minInvestment() - 1e-04); 
-
-      double rate = util::rate(u, net_, state_, candidate_);
-
-      // Build up the final expression
-      enu += nextVal * rate * xi;
-      denom += rate * xi; 
-    }
-    assert(totalRenewableResourceExpended <= state_._active.size() + 1 + 1e-3);
-    assert(denom > 0);
-    // THe final expression....
-    double val = enu / denom;
-    // .. minimize over it.
+    double rate = util::rate(t, net_, state_, candidate_);
+    double delta = Task::maxInvestment() - Task::minInvestment();
+    double val = (enumerator + rate * delta * nextStateVals[nextStateValIdx]) / (totalRate_ + rate * delta);
     minValue = std::min(minValue, val);
+    ++nextStateValIdx;
   }
   return minValue;
 }
