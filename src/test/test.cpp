@@ -228,6 +228,7 @@ BOOST_AUTO_TEST_SUITE( crashingGame )
 
     double fastMeanVal = FastEvaluator<DynamicPolicy, CrashingEvaluator>(policy).evaluate(n, B);
     BOOST_CHECK_CLOSE(optValue, fastMeanVal, 1e-4);
+    BOOST_CHECK_CLOSE(29.333, fastMeanVal, 1e-4);
   }
 
 BOOST_AUTO_TEST_SUITE_END()
