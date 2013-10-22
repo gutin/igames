@@ -68,11 +68,9 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
   }
   double minValue = std::numeric_limits<double>::max();
   
-  double crashingAmount = Task::maxInvestment();
-
   double enumerator = 1;
-
-  std::vector<double> nextStateVals(state_._active.size(), 0);
+  std::vector<double> nextStateVals;
+  nextStateVals.reserve(state_._active.size());
   BOOST_FOREACH(vertex_t u, state_._active)
   {
     // optimised way of finding the value in the subsequent state
@@ -110,11 +108,11 @@ double CrashingEvaluator::evaluate(const UDC& udc_,
         tav &= ~(1L << stUDC._activity2UDCIndex[u]);
       }
       nextVal = stUDC.value(tav);
-      nextStateVals.push_back(nextVal);
     }
 
     double rate = util::rate(u, net_, state_, candidate_);
     enumerator += nextVal * rate * Task::minInvestment();
+    nextStateVals.push_back(nextVal);
   }
 
   size_t nextStateValIdx = 0;
