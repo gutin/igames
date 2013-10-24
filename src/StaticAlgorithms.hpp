@@ -87,6 +87,21 @@ struct StaticEvalTraits<class ImplementationUncertaintyEvaluator>
   enum { impunc_flag = 1 };
 };
 
+
+typedef std::list<StaticPolicy> StaticPolicies;
+
+struct DeterministicDPAlgoTableEntry 
+{
+  double _value;
+  std::list<DeterministicDPAlgoTableEntry*> _successorEntries;
+  size_t _budget;
+  vertex_t _task;
+};
+
+typedef std::vector<std::vector<DeterministicDPAlgoTableEntry> > DeterministicDPAlgoTable; 
+
+double allOptimalDeterministicPolicies(const Network&, size_t, StaticPolicies&);
+
 template <class Evaluator>
 double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, const TaskList& searchSpace_, StaticPolicy& policy_)
 {
@@ -142,6 +157,26 @@ double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, Stat
     }
   }
   return staticStochasticPolicyHeuristic<Evaluator>(net_, budget_, nLongestRunning, policy_);
+}
+
+template <class Evaluator> 
+double minimalStaticStochasticPolicyHeuristic(const Network& net_, size_t budget_, StaticPolicy& policy_)
+{
+  StaticPolicies sps;
+  allOptimalDeterministicPolicies(net_, budget_, sps);
+
+  StaticPolicy best;
+  double optimalVal = std::numeric_limits<double>::min();
+  BOOST_FOREACH(const StaticPolicy& sp, sps)
+  {
+    double value = FastEvaluator<StaticPolicy, Evaluator>(sp).evaluate(net_, budget_);
+    if(value > optimalVal)
+    {
+      best = sp;
+      optimalVal = value;
+    }
+  }
+  return optimalVal;
 }
 
 void dumpStaticStochasticMILP(const Network& net_, size_t budget_, const std::string& lpFile_);

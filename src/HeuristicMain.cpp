@@ -10,6 +10,7 @@
 #include <boost/tokenizer.hpp>
 
 #include <iostream>
+#include <iterator>
 #include <sstream>
 
 using namespace ig::core;
@@ -24,6 +25,7 @@ namespace
   const char* RCPFILE_ARG_NAME = "rcp-file";
   const char* STATIC_OPTION = "static";
   const char* STATIC_HEURISTIC_OPTION = "heurstatic";
+  const char* MINIMAL_STATIC_HEURISTIC_OPTION = "minhstatic";
   const char* DUMP_STATIC_OPTION = "dump-static";
   const char* DETERMINISTIC_OPTION = "determ";
   const char* SELECTEVAL_OPTION = "select";
@@ -52,6 +54,7 @@ int main(int ac_, char** av_)
     ("crash", "Solve with crashing?")
     (DETERMINISTIC_OPTION, "Use the deterministic solution?")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use")
+    ("pcps", "Print deterministic critical paths")
     (SELECTEVAL_OPTION, po::value<std::string>(), "Evaluate with interdicited tasks (a comma separated list)");
 
   po::variables_map vm;
@@ -106,6 +109,19 @@ int main(int ac_, char** av_)
   std::cout << "There are " << boost::num_edges(n.graph()) << " edges" << std::endl;
   std::cout << "There are " << boost::num_vertices(n.graph()) << " vertices" << std::endl;
   
+  if(vm.count("pcps"))
+  {
+    StaticPolicies sps;
+    std::cout << " value is " << allOptimalDeterministicPolicies(n, budget, sps) << std::endl;
+    BOOST_FOREACH(StaticPolicy& sp, sps)
+    {
+      std::cout << "One choice: ";
+      std::copy(sp._targets.begin(), sp._targets.end(), std::ostream_iterator<vertex_t>(std::cout, " "));
+      std::cout << std::endl;
+    }
+    return 0;
+  }
+
   bool impunc = vm.count("impunc");
   //Work out which algorithm to run...
   double value = 0; 
@@ -163,6 +179,15 @@ int main(int ac_, char** av_)
       value = staticStochasticPolicyHeuristic<ImplementationUncertaintyEvaluator>(n, budget, policy);
     else
       value = staticStochasticPolicyHeuristic<StandardEvaluator>(n, budget, policy);
+  }
+  else if(vm.count(MINIMAL_STATIC_HEURISTIC_OPTION))
+  {
+    if(vm.count("crash"))
+      value = minimalStaticStochasticPolicyHeuristic<CrashingEvaluator>(n, budget, policy);
+    else if(vm.count("impunc"))
+      value = minimalStaticStochasticPolicyHeuristic<ImplementationUncertaintyEvaluator>(n, budget, policy);
+    else
+      value = minimalStaticStochasticPolicyHeuristic<StandardEvaluator>(n, budget, policy);
   }
   else if(vm.count(STATIC_OPTION))
   {

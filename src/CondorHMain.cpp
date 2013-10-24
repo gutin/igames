@@ -102,6 +102,25 @@ int main(int ac_, char** av_)
       value = staticStochasticPolicyHeuristic<StandardEvaluator>(n, budget,sp);
     }
   }
+  else if(determOrStatic == "mstatic")
+  {
+    StaticPolicy sp;
+    if(impunc)
+    {
+      std::cout << "Solving the mstatic impunc" << std::endl;
+      value = minimalStaticStochasticPolicyHeuristic<ImplementationUncertaintyEvaluator>(n, budget,sp);
+    }
+    else if(crash)
+    {
+      std::cout << "Solving the minimalStatic crashing" << std::endl;
+      value = minimalStaticStochasticPolicyHeuristic<CrashingEvaluator>(n, budget,sp);
+    }
+    else
+    {
+      std::cout << "Solving the minimalStatic standard" << std::endl;
+      value = minimalStaticStochasticPolicyHeuristic<StandardEvaluator>(n, budget,sp);
+    }
+  }
   else 
   {
     if(impunc)

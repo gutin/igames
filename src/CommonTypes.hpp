@@ -20,6 +20,8 @@ http://boost.2283326.n4.nabble.com/Problem-in-using-Transitive-closure-on-Linux-
 #include <boost/shared_ptr.hpp>
 
 #define TASK_ATTR(task, attr) net_.graph()[(task)].attr
+#define MUTABLE_TASK_ATTR(task, attr) const_cast<Task&>(net_.graph()[(task)]).attr
+#define TASK_PROP(task, prop) net_.graph()[(task)].prop()
 
 #include <iostream>
 #include <vector>

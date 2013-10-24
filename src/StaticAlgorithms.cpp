@@ -3,8 +3,11 @@
 
 #include <ilcplex/ilocplex.h>
 
+#include <boost/graph/topological_sort.hpp>
+
 #include <sstream>
 #include <limits>
+#include <iterator>
 
 namespace
 {
@@ -149,6 +152,28 @@ void populateStaticStochasticModel(const Network& net_, size_t budget_, IloEnv& 
     activityIndex++;
   }
   model.add(budgetExpr == static_cast<IloInt>(budget_));
+}
+
+void collectCriticalPaths(vertex_t task_, size_t budget_, const DeterministicDPAlgoTable& dptable_, const TaskList& tasks_, TaskSets& result_)
+{
+  const DeterministicDPAlgoTableEntry& entry = dptable_[budget_][task_];
+  if(entry._successorEntries.empty())
+  {
+    TaskSet sp;
+    assert(!tasks_.empty());
+    std::copy(tasks_.begin(), tasks_.end(), std::inserter(sp, sp.begin()));
+    result_.insert(sp);
+    return;
+  }
+  BOOST_FOREACH(DeterministicDPAlgoTableEntry* se, entry._successorEntries)
+  {
+    TaskList nextTasks = tasks_;
+    if(se->_budget < budget_)
+    {
+      nextTasks.push_back(task_);
+    }
+    collectCriticalPaths(se->_task, se->_budget, dptable_, nextTasks, result_);
+  }
 }
 
 }
@@ -418,6 +443,63 @@ void dumpStaticStochasticMILP(const Network& net_, size_t budget_, const std::st
 
   IloCplex cplex(model);
   cplex.exportModel(lpFile_.c_str());
+}
+
+double allOptimalDeterministicPolicies(const Network& net_, size_t budget_, StaticPolicies& result_)
+{
+  DeterministicDPAlgoTable dpTable(budget_ + 1, std::vector<DeterministicDPAlgoTableEntry>(net_.size(), DeterministicDPAlgoTableEntry() ));
+  
+  // sort the tasks in a topological order for the backward iteration
+  TaskList tpsortedTasks;
+  boost::topological_sort(net_.graph(), std::back_inserter(tpsortedTasks));
+
+  // dynamic programming deterministic algorithm
+  BOOST_FOREACH(vertex_t t, tpsortedTasks)
+  {
+    for(size_t b = 0; b <= budget_; ++b)
+    {
+      double value = 0;
+      oute_i oe, oe_end;
+      for(boost::tie(oe, oe_end) = boost::out_edges(t, net_.graph()); oe != oe_end; ++oe)
+      {
+        vertex_t s = boost::target(*oe, net_.graph());
+        value = std::max(TASK_PROP(t, expNormal) + dpTable[b][s]._value, value);
+        if(b > 0)
+        {
+          value = std::max(TASK_PROP(t, expDelayed) + dpTable[b-1][s]._value, value);
+        }
+      }
+
+      // store info in the table to be able to trace bakck the optimal interdiction patterns
+      dpTable[b][t]._value = value;
+      dpTable[b][t]._budget = b;
+      dpTable[b][t]._task = t;
+      for(boost::tie(oe, oe_end) = boost::out_edges(t, net_.graph()); oe != oe_end; ++oe)
+      {
+        vertex_t s = boost::target(*oe, net_.graph());
+        if(b > 0 && std::abs(value - TASK_PROP(t, expDelayed) - dpTable[b-1][s]._value) < 1e-4)
+        {
+           dpTable[b][t]._successorEntries.push_back(&dpTable[b-1][s]); 
+        }
+        if(std::abs(value - TASK_PROP(t, expNormal) - dpTable[b][s]._value) < 1e-4)
+        {
+           dpTable[b][t]._successorEntries.push_back(&dpTable[b][s]); 
+        }
+      }
+    }
+  }
+  double retValue = dpTable[budget_][net_.start()]._value;
+  TaskSets itaskSets;
+
+  // trace out the interidction patterns (all the optimal interdiction patterns)
+  collectCriticalPaths(net_.start(), budget_, dpTable, TaskList(), itaskSets);    
+  BOOST_FOREACH(const TaskSet& ts, itaskSets)
+  {
+    StaticPolicy sp;
+    std::copy(ts.begin(), ts.end(), std::inserter(sp._targets, sp._targets.begin()));
+    result_.push_back(sp);
+  }
+  return retValue;
 }
 
 }}

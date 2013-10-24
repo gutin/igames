@@ -251,3 +251,45 @@ BOOST_AUTO_TEST_SUITE( newStaticHeuristicShouldBeVeryGood )
   }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE( testDeterministicALternatives )
+
+  BOOST_AUTO_TEST_CASE(testSameValueAsMilp)
+  {
+    const int B = 3;
+    Network n;
+    n.import("../samples/10-OS-0.5/Pat57.rcp");
+    
+    StaticPolicy staticPolicy;
+    double milpValue = deterministicPolicy(n, B, staticPolicy);
+
+    StaticPolicies sps;
+    double dpValue = allOptimalDeterministicPolicies(n, B,sps); 
+    BOOST_CHECK_CLOSE(milpValue, dpValue, 1e-4);
+
+    Network& net_ = n;
+    
+    std::vector<double> oldNus(n.size(), 0);
+    BOOST_FOREACH(StaticPolicy dsp, sps)
+    {
+      std::cout << "Checking static policy ";
+      std::copy(dsp._targets.begin(), dsp._targets.end(), std::ostream_iterator<vertex_t>(std::cout, " "));
+      std::cout << std::endl;
+      vertex_i vi, vi_end;
+
+      for(boost::tie(vi, vi_end) = boost::vertices(n.graph()); vi != vi_end; ++vi)
+      {
+        oldNus[*vi] = TASK_ATTR(*vi, _nu);
+        if(dsp._targets.find(*vi) != dsp._targets.end())
+          MUTABLE_TASK_ATTR(*vi, _nu) = TASK_ATTR(*vi, _delta);
+      }
+
+      BOOST_CHECK_CLOSE(milpValue, deterministicPolicy(n, 0, staticPolicy), 1e-4);
+      for(boost::tie(vi, vi_end) = boost::vertices(n.graph()); vi != vi_end; ++vi)
+      {
+        MUTABLE_TASK_ATTR(*vi, _nu) = oldNus[*vi];
+      }
+    }
+  }
+
+BOOST_AUTO_TEST_SUITE_END()
