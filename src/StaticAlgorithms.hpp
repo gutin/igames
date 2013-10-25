@@ -168,7 +168,7 @@ double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, Stat
       searchSpace.push_back(*vit); 
     }
   }
-  return staticStochasticPolicyHeuristic<Evaluator>(net_, budget_, nLongestRunning, policy_);
+  return staticStochasticPolicyHeuristic<Evaluator>(net_, budget_, searchSpace, policy_);
 }
 
 template <class Evaluator> 
