@@ -11,6 +11,8 @@
 
 namespace ig { namespace core {
 
+const int EXTRA_TASK_NUMBER = 3;
+
 struct StaticPolicy
 {
   ActionSharedPtr at(const State&) const;
@@ -105,11 +107,16 @@ double allOptimalDeterministicPolicies(const Network&, size_t, StaticPolicies&);
 template <class Evaluator>
 double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, const TaskList& searchSpace_, StaticPolicy& policy_)
 {
+  size_t numCombos = util::nChooseK(searchSpace_.size(), budget_);
+
   double optimalHeuristicValue = std::numeric_limits<double>::min();
+  size_t comboNo = 0;
   for(size_t bits = 0; bits < (1L << searchSpace_.size()); ++bits)
   {
     if(util::numBitsSet(bits) != budget_)
       continue;
+    comboNo++;
+    std::cout << "Looking at combination [" << comboNo << "/" << numCombos << "]" << std::endl;
     StaticPolicy policyToEvaluate;
     for(size_t b = 0; b < searchSpace_.size(); ++b)
     {
@@ -133,6 +140,7 @@ double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, cons
       policy_ = policyToEvaluate;  
     }
   }
+  assert(comboNo == numCombos);
   return optimalHeuristicValue;
 }
 
@@ -142,18 +150,22 @@ double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, Stat
   TaskList nLongestRunning;
   vertex_i vi, vi_end;
   boost::tie(vi, vi_end) = boost::vertices(net_.graph());
-  std::copy(vi, vi_end, std::inserter(nLongestRunning, nLongestRunning.begin()));
+  std::copy(vi, vi_end, std::back_inserter(nLongestRunning));
   std::sort(nLongestRunning.begin(), nLongestRunning.end(), typename StaticEvalTraits<Evaluator>::CompType(net_));
-  nLongestRunning.resize(budget_ + 1);
 
   //now add anything from determ to make sure were not worse than that
   StaticPolicy determPolicy;
   deterministicPolicy(net_, budget_,  determPolicy, StaticEvalTraits<Evaluator>::impunc_flag);
-  BOOST_FOREACH(vertex_t t, determPolicy._targets)
+
+  TaskList searchSpace;
+  std::copy(determPolicy._targets.begin(), determPolicy._targets.end(), std::back_inserter(searchSpace));
+  
+  size_t desiredSize = budget_ + EXTRA_TASK_NUMBER;
+  for(TaskList::const_iterator vit = nLongestRunning.begin(); vit != nLongestRunning.end() && searchSpace.size() < desiredSize; ++vit)
   {
-    if(std::find(nLongestRunning.begin(), nLongestRunning.end(), t) == nLongestRunning.end())
+    if(std::find(determPolicy._targets.begin(), determPolicy._targets.end(), *vit) == determPolicy._targets.end())
     {
-      nLongestRunning.push_back(t);
+      searchSpace.push_back(*vit); 
     }
   }
   return staticStochasticPolicyHeuristic<Evaluator>(net_, budget_, nLongestRunning, policy_);

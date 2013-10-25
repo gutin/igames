@@ -72,6 +72,8 @@ inline bool isTerminalState(const Network net_, const State& state_)
          state_._interdicted.find(e) != state_._interdicted.end();
 }
 
+size_t nChooseK(size_t n, size_t k);
+
 }}}
 
 #endif

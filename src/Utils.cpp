@@ -1,6 +1,19 @@
 #include "Utils.hpp"
 #include <cassert>
 
+namespace {
+  //straightfoward impl
+  size_t factorial(size_t x)
+  {
+    size_t r = 1;
+    for(size_t i = 2; i <= x; ++i)
+    {
+      r *= i;
+    }
+    return r;
+  }
+}
+
 namespace ig { namespace core { namespace util {
 
 StateSharedPtr 
@@ -67,6 +80,12 @@ nextState(const Network& net_,
     }
   }
   return ret;
+}
+
+// simple naive impl
+size_t nChooseK(size_t n, size_t k)
+{
+  return factorial(n) / (factorial(k) * factorial(n-k));
 }
 
 }}}
