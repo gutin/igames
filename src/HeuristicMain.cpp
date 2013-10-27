@@ -112,7 +112,8 @@ int main(int ac_, char** av_)
   if(vm.count("pcps"))
   {
     StaticPolicies sps;
-    std::cout << " value is " << allOptimalDeterministicPolicies(n, budget, sps) << std::endl;
+    CriticalPaths cps;
+    std::cout << " value is " << allOptimalDeterministicPolicies(n, budget, sps, cps) << std::endl;
     BOOST_FOREACH(StaticPolicy& sp, sps)
     {
       std::cout << "One choice: ";

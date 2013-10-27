@@ -192,4 +192,14 @@ double Network::orderStrength() const
   return 0.8;
 }
 
+void Network::swapDurations(std::vector<double>& durations_)
+{
+  assert(durations_.size() == size());
+  vertex_i vi, vi_end;
+  for (boost::tie(vi, vi_end) = boost::vertices(_g); vi != vi_end; ++vi)
+  {
+    std::swap(_g[*vi]._nu, durations_[*vi]);
+  }
+}
+
 }}

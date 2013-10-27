@@ -265,8 +265,10 @@ BOOST_AUTO_TEST_SUITE( testDeterministicALternatives )
     double milpValue = deterministicPolicy(n, B, staticPolicy);
 
     StaticPolicies sps;
-    double dpValue = allOptimalDeterministicPolicies(n, B,sps); 
+    CriticalPaths cps;
+    double dpValue = allOptimalDeterministicPolicies(n, B,sps, cps); 
     BOOST_CHECK_CLOSE(milpValue, dpValue, 1e-4);
+    BOOST_REQUIRE_EQUAL(cps.size(), sps.size());
 
     Network& net_ = n;
     
@@ -291,6 +293,50 @@ BOOST_AUTO_TEST_SUITE( testDeterministicALternatives )
         MUTABLE_TASK_ATTR(*vi, _nu) = oldNus[*vi];
       }
     }
+
+    StaticPolicies::const_iterator spit = sps.begin();
+    //check the critical paths are of the right length
+    BOOST_FOREACH(const TaskList& cp, cps)
+    {
+      double len = 0;
+      BOOST_FOREACH(vertex_t t, cp)
+      {
+        len += spit->_targets.find(t) == spit->_targets.end() ? TASK_PROP(t, expNormal) : TASK_PROP(t, expDelayed);
+      }
+      BOOST_CHECK_CLOSE(milpValue, len, 1e-4);
+      ++spit;
+    }
   }
 
+  BOOST_AUTO_TEST_CASE(testNetworkSwapDurationsHack)
+  {
+    const int B = 3;
+    Network net_;
+    net_.import("../samples/10-OS-0.5/Pat57.rcp");
+    vertex_i vi, vi_end;
+    
+    double originalSum = 0;
+    for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
+    {
+      originalSum += TASK_PROP(*vi, expNormal);
+    }
+    std::vector<double> dummyDurations(net_.size(), 1);
+    net_.swapDurations(dummyDurations); 
+
+    double intermediateSum = 0;
+    for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
+    {
+      intermediateSum += TASK_PROP(*vi, expNormal);
+    }
+    BOOST_CHECK_CLOSE(net_.size(), intermediateSum, 1e-4);
+    BOOST_CHECK(intermediateSum != originalSum);
+
+    net_.swapDurations(dummyDurations); 
+    double finalSum = 0;
+    for(boost::tie(vi, vi_end) = boost::vertices(net_.graph()); vi != vi_end; ++vi)
+    {
+      finalSum += TASK_PROP(*vi, expNormal);
+    }
+    BOOST_CHECK_CLOSE(finalSum, originalSum, 1e-4);
+  }
 BOOST_AUTO_TEST_SUITE_END()

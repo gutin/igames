@@ -27,6 +27,8 @@ public:
 
   std::vector<BigInt> _successorbs;
   std::vector<BigInt> _predbs;
+
+  void swapDurations(std::vector<double>&);
 private:
   DirectedGraph _g;
   vertex_t _start, _end;

@@ -8,8 +8,8 @@ struct Task
   /*
    * Expected normal and delayed durations (assuming exponential distros)
    */
-  double expNormal() const { return 1.0 / _nu; }
-  double expDelayed() const { return 1.0 / _delta; }
+  double expNormal() const { return _nu == 0 ? 0 : 1.0 / _nu; }
+  double expDelayed() const { return _delta == 0 ? 0 : 1.0 / _delta; }
 
   /*
    * Normal and delayed rates

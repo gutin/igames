@@ -154,25 +154,28 @@ void populateStaticStochasticModel(const Network& net_, size_t budget_, IloEnv& 
   model.add(budgetExpr == static_cast<IloInt>(budget_));
 }
 
-void collectCriticalPaths(vertex_t task_, size_t budget_, const DeterministicDPAlgoTable& dptable_, const TaskList& tasks_, TaskSets& result_)
+void collectCriticalPaths(vertex_t task_, size_t budget_, const DeterministicDPAlgoTable& dptable_, const TaskList& tasks_, const TaskList& criticalPathSoFar_, 
+    TaskSets& result_, CriticalPaths& criticalPaths_)
 {
   const DeterministicDPAlgoTableEntry& entry = dptable_[budget_][task_];
   if(entry._successorEntries.empty())
   {
     TaskSet sp;
-    assert(!tasks_.empty());
     std::copy(tasks_.begin(), tasks_.end(), std::inserter(sp, sp.begin()));
     result_.insert(sp);
+    criticalPaths_.insert(criticalPathSoFar_);
     return;
   }
   BOOST_FOREACH(DeterministicDPAlgoTableEntry* se, entry._successorEntries)
   {
     TaskList nextTasks = tasks_;
+    TaskList nextCritPath = criticalPathSoFar_;
     if(se->_budget < budget_)
     {
       nextTasks.push_back(task_);
     }
-    collectCriticalPaths(se->_task, se->_budget, dptable_, nextTasks, result_);
+    nextCritPath.push_back(task_);
+    collectCriticalPaths(se->_task, se->_budget, dptable_, nextTasks, nextCritPath, result_, criticalPaths_);
   }
 }
 
@@ -445,7 +448,7 @@ void dumpStaticStochasticMILP(const Network& net_, size_t budget_, const std::st
   cplex.exportModel(lpFile_.c_str());
 }
 
-double allOptimalDeterministicPolicies(const Network& net_, size_t budget_, StaticPolicies& result_)
+double allOptimalDeterministicPolicies(const Network& net_, size_t budget_, StaticPolicies& result_, CriticalPaths& criticalPaths_)
 {
   DeterministicDPAlgoTable dpTable(budget_ + 1, std::vector<DeterministicDPAlgoTableEntry>(net_.size(), DeterministicDPAlgoTableEntry() ));
   
@@ -492,7 +495,7 @@ double allOptimalDeterministicPolicies(const Network& net_, size_t budget_, Stat
   TaskSets itaskSets;
 
   // trace out the interidction patterns (all the optimal interdiction patterns)
-  collectCriticalPaths(net_.start(), budget_, dpTable, TaskList(), itaskSets);    
+  collectCriticalPaths(net_.start(), budget_, dpTable, TaskList(), TaskList(), itaskSets, criticalPaths_);    
   BOOST_FOREACH(const TaskSet& ts, itaskSets)
   {
     StaticPolicy sp;

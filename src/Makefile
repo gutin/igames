@@ -104,8 +104,8 @@ test : library heuristics_lib $(TEST_OBJS) $(LIB_NAME) $(HEURISTIC_LIB_NAME)
 hinstall : heuristics_lib $(HBIN_OBJS) $(HEURISTIC_LIB_NAME) $(LIB_NAME)
 	 $(CXX) $(HBIN_OBJS) $(LFLAGS) $(HEURISTIC_LIB_NAME) $(LIB_NAME)  $(HEURISTIC_LFLAGS) -o $(HEURISTICS_BIN) 
 	
-einstall : library $(LIB_NAME)  $(EXP_OBJS)
-	$(CXX) $(EXP_OBJS) $(LIB_NAME) -o $(EXP_BIN) $(LFLAGS)
+einstall : library $(LIB_NAME) $(HEURISTIC_LIB_NAME) $(EXP_OBJS)
+	$(CXX) $(EXP_OBJS) $(HEURISTIC_LIB_NAME) $(LIB_NAME) -o $(EXP_BIN) $(LFLAGS) $(HEURISTIC_LFLAGS)
 
 ceinstall : library $(LIB_NAME) $(CEXP_OBJS)
 	$(CXX) $(CEXP_OBJS) $(LIB_NAME) -o $(CEXP_BIN) 

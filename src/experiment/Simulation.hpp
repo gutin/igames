@@ -30,6 +30,9 @@ struct NullStateVisitor
 {
   void visit(const StateSharedPtr& state, const ActionSharedPtr& actionPtr_) const
   {}
+
+  void recordCompletion(vertex_t,double)
+  {}
 };
 
 template <class InterdictionPolicy, class StateVisitor = NullStateVisitor, bool impunc = false, bool logInfo = false>
@@ -55,6 +58,7 @@ double Simulation<IP, SV, impunc, logInfo>::run(size_t buget_)
   OrderedTaskSet finished;
   double makespan = 0;
 
+  std::vector<double> taskStartTimes(_net.size(), 0);
   while(!ig::core::util::isTerminalState(_net, *statePtr))
   {
     // Get the action
@@ -108,6 +112,11 @@ double Simulation<IP, SV, impunc, logInfo>::run(size_t buget_)
     }
     finished.insert(finishing);
     makespan += minDuration;
+    BOOST_FOREACH(vertex_t t, statePtr->_active)
+    {
+      taskStartTimes[t] += minDuration; 
+    }
+    _visitor.recordCompletion(finishing, taskStartTimes[finishing]);
     if(logInfo)
     {
       std::cout << "Task " << finishing << " completed after " << minDuration << " weeks." << std::endl;

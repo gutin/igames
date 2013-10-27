@@ -91,6 +91,7 @@ struct StaticEvalTraits<class ImplementationUncertaintyEvaluator>
 
 
 typedef std::list<StaticPolicy> StaticPolicies;
+typedef std::set<TaskList> CriticalPaths;
 
 struct DeterministicDPAlgoTableEntry 
 {
@@ -102,7 +103,7 @@ struct DeterministicDPAlgoTableEntry
 
 typedef std::vector<std::vector<DeterministicDPAlgoTableEntry> > DeterministicDPAlgoTable; 
 
-double allOptimalDeterministicPolicies(const Network&, size_t, StaticPolicies&);
+double allOptimalDeterministicPolicies(const Network&, size_t, StaticPolicies&, CriticalPaths&);
 
 template <class Evaluator>
 double staticStochasticPolicyHeuristic(const Network& net_, size_t budget_, const TaskList& searchSpace_, StaticPolicy& policy_)
@@ -175,7 +176,8 @@ template <class Evaluator>
 double minimalStaticStochasticPolicyHeuristic(const Network& net_, size_t budget_, StaticPolicy& policy_)
 {
   StaticPolicies sps;
-  allOptimalDeterministicPolicies(net_, budget_, sps);
+  CriticalPaths cps;
+  allOptimalDeterministicPolicies(net_, budget_, sps, cps);
 
   StaticPolicy best;
   double optimalVal = std::numeric_limits<double>::min();

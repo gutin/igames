@@ -4,6 +4,7 @@
 #include "Task.hpp"
 #include "PersistedPolicy.hpp"
 #include "DynamicEvaluator.hpp"
+#include "StaticAlgorithms.hpp"
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/value_semantic.hpp>
@@ -17,6 +18,7 @@ using namespace ig::experiment;
 struct InterdictionSamplingStateVisitor
 {
   OrderedTaskSet _interdictedTasks;
+  std::vector<double> _realizedRates;
 
   void visit(const StateSharedPtr& /*state*/, const ActionSharedPtr& actionPtr_) 
   {
@@ -24,6 +26,16 @@ struct InterdictionSamplingStateVisitor
     {
       _interdictedTasks.insert(t);
     }
+  }
+
+  void recordCompletion(vertex_t t, double d)
+  {
+    _realizedRates[t] = 1.0/d;
+  }
+
+  InterdictionSamplingStateVisitor(const Network& net_)
+    : _realizedRates(net_.size(), 0)
+  {
   }
 };
 
@@ -40,17 +52,45 @@ namespace
 }
 
 template <class Policy, class Simulation>
-void runSimulations(size_t budget_, const Policy& policy_, Simulation& sim_, size_t nruns_, std::vector<size_t>& icounts) 
+void runSimulations(const Network& net_, size_t budget_, const Policy& policy_, Simulation& sim_, size_t nruns_, std::vector<size_t>& icounts, std::vector<size_t>& critcounts) 
 {
   for(size_t i = 0; i < nruns_; ++i)
   {
     std::cout << "Running simulation " << i << std::endl;
-    sim_.run(budget_);
+    double makespan = sim_.run(budget_);
     BOOST_FOREACH(vertex_t t, sim_._visitor._interdictedTasks)
     {
       icounts[t]++;
     }
+
+    //std::cout << "The realized durations are ";
+    //std::copy(sim_._visitor._realizedRates.begin(), sim_._visitor._realizedRates.end(), std::ostream_iterator<double>(std::cout, " "));
+    //std::cout << std::endl;
+    // find critical tasks in that realization
+    // first we use a hack to tmporarily change the task durations in the network by sawpping them with the vals recorded in the realization vector
+    const_cast<Network&>(net_).swapDurations(sim_._visitor._realizedRates);
+
+    StaticPolicies sps;
+    CriticalPaths cps;
+    ig::core::allOptimalDeterministicPolicies(net_, 0, sps, cps);
+    //std::cout << cps.size() << " critical paths found in that realization " << std::endl;
+    assert(cps.size());
+    TaskList aCriticalPath = *cps.begin();
+    //std::cout << "The crit path is ";
+    //std::copy(aCriticalPath.begin(), aCriticalPath.end(), std::ostream_iterator<vertex_t>(std::cout, " "));
+    //std::cout << std::endl;
+
+    double len = 0;
+    BOOST_FOREACH(vertex_t ct, aCriticalPath)
+    {
+      len += TASK_PROP(ct, expNormal);
+      critcounts[ct]++;
+    }
+    assert(std::abs(len - makespan) < 1e-3);
     sim_._visitor._interdictedTasks.clear(); 
+
+    //Crucially remember to change the durations back to their orginal numbers
+    const_cast<Network&>(net_).swapDurations(sim_._visitor._realizedRates);
   }
 }
 
@@ -60,21 +100,29 @@ void interdictionProbs(const Network& net_, size_t budget_, const Policy& policy
   std::cout << "Performing the experiment" << std::endl; 
 
   std::vector<size_t> icounts(net_.size(), 0);
-  InterdictionSamplingStateVisitor isv;
+  std::vector<size_t> critcounts(net_.size(), 0);
+  InterdictionSamplingStateVisitor isv(net_);
   if(verbose_)
   {
     Simulation<Policy, InterdictionSamplingStateVisitor, false, true> sim(net_, policy_, isv);
-    runSimulations(budget_, policy_, sim, nruns_, icounts);
+    runSimulations(net_, budget_, policy_, sim, nruns_, icounts, critcounts);
   }
   else
   {
     Simulation<Policy, InterdictionSamplingStateVisitor> sim(net_, policy_, isv);
-    runSimulations(budget_, policy_, sim, nruns_, icounts);
+    runSimulations(net_, budget_, policy_, sim, nruns_, icounts, critcounts);
   }
   for(size_t i = 0; i < icounts.size(); ++i)
   {
     double prob = double(icounts[i]) / double(nruns_); 
     std::cout << "Probability of interdicting [" <<  i << "] = [" << prob << "]" << std::endl; 
+  }
+  std::cout << std::endl << "\nPrinting the criticality indices now\n" << std::endl;
+
+  for(size_t i = 0; i < critcounts.size(); ++i)
+  {
+    double prob = double(critcounts[i]) / double(nruns_); 
+    std::cout << "Criticality index [" <<  i << "] = [" << prob << "]" << std::endl; 
   }
 }
 
