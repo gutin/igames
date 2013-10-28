@@ -11,7 +11,7 @@
 
 namespace ig { namespace core {
 
-const int EXTRA_TASK_NUMBER = 3;
+const int EXTRA_TASK_NUMBER = 2;
 
 struct StaticPolicy
 {
