@@ -29,6 +29,7 @@ namespace
   const char* DUMP_STATIC_OPTION = "dump-static";
   const char* DETERMINISTIC_OPTION = "determ";
   const char* SELECTEVAL_OPTION = "select";
+  const char* DUMP_PROJECT_GRAPH_OPTION = "dumpdot";
 
   const char* DESCRIPTION = "Heuristic interdiction game solver";
 }
@@ -50,6 +51,7 @@ int main(int ac_, char** av_)
     (STATIC_OPTION, "Use the stochastic static solution?")
     (STATIC_HEURISTIC_OPTION, "Use the heuristic stochastic static solution?")
     (DUMP_STATIC_OPTION, po::value<std::string>(), "Dump the stochastic static problem as the given .lp file")
+    (DUMP_PROJECT_GRAPH_OPTION, po::value<std::string>(), "Dump the project as a DOT file")
     ("impunc", "Solve with implementation uncertainty?")
     ("crash", "Solve with crashing?")
     (DETERMINISTIC_OPTION, "Use the deterministic solution?")
@@ -61,11 +63,6 @@ int main(int ac_, char** av_)
   po::store(po::parse_command_line(ac_, av_, desc), vm);
   po::notify(vm);
 
-  if(!vm.count(BUDGET_ARG_NAME))
-  {
-    std::cout << desc << std::endl;
-    return 1;
-  }
   bool delayFromFile = vm.count("delays-from-file") > 0;
   if(delayFromFile)
   {
@@ -74,7 +71,6 @@ int main(int ac_, char** av_)
 
   Network n;
   std::string rcpFile;
-
 
   if(vm.count(SIZE_ARG_NAME) && vm.count(INSTANCE_ARG_NAME) &&
      vm.count(ORDER_STRENGTH_ARG_NAME) && vm.count(RCPBASE_ARG_NAME))
@@ -108,7 +104,19 @@ int main(int ac_, char** av_)
   n.import(rcpFile, delayFromFile);
   std::cout << "There are " << boost::num_edges(n.graph()) << " edges" << std::endl;
   std::cout << "There are " << boost::num_vertices(n.graph()) << " vertices" << std::endl;
+
+  if(vm.count(DUMP_PROJECT_GRAPH_OPTION))
+  {
+    std::string dotFile = vm[DUMP_PROJECT_GRAPH_OPTION].as<std::string>();
+    n.exportDot(dotFile);
+    return 0;
+  }
   
+  if(!vm.count(BUDGET_ARG_NAME))
+  {
+    std::cout << desc << std::endl;
+    return 1;
+  }
   if(vm.count("pcps"))
   {
     StaticPolicies sps;

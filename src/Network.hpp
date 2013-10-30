@@ -29,6 +29,8 @@ public:
   std::vector<BigInt> _predbs;
 
   void swapDurations(std::vector<double>&);
+
+  void exportDot(const std::string& dotfile_) const;
 private:
   DirectedGraph _g;
   vertex_t _start, _end;
