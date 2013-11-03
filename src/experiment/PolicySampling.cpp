@@ -52,11 +52,13 @@ namespace
 }
 
 template <class Policy, class Simulation>
-void runSimulations(const Network& net_, size_t budget_, const Policy& policy_, Simulation& sim_, size_t nruns_, std::vector<size_t>& icounts, std::vector<size_t>& critcounts) 
+void runSimulations(const Network& net_, size_t budget_, const Policy& policy_, Simulation& sim_, size_t nruns_, std::vector<size_t>& icounts, 
+    std::vector<size_t>& critcounts,
+    OrderedTaskSetMap<double>::type& criticalPathDistro_,
+    std::vector<size_t>& criticalAndInterdictedCounts_) 
 {
   for(size_t i = 0; i < nruns_; ++i)
   {
-    std::cout << "Running simulation " << i << std::endl;
     double makespan = sim_.run(budget_);
     BOOST_FOREACH(vertex_t t, sim_._visitor._interdictedTasks)
     {
@@ -81,36 +83,56 @@ void runSimulations(const Network& net_, size_t budget_, const Policy& policy_, 
     //std::cout << std::endl;
 
     double len = 0;
+    OrderedTaskSet cpts; 
     BOOST_FOREACH(vertex_t ct, aCriticalPath)
     {
       len += TASK_PROP(ct, expNormal);
       critcounts[ct]++;
+      if(sim_._visitor._interdictedTasks.find(ct) != sim_._visitor._interdictedTasks.end())
+      {
+        criticalAndInterdictedCounts_[ct]++;
+      }
+      cpts.insert(ct);
     }
     assert(std::abs(len - makespan) < 1e-3);
+    if(criticalPathDistro_.find(cpts) == criticalPathDistro_.end())
+    {
+      criticalPathDistro_[cpts] = 0;
+    }
+    else
+    {
+      ++criticalPathDistro_[cpts];
+    }
     sim_._visitor._interdictedTasks.clear(); 
 
     //Crucially remember to change the durations back to their orginal numbers
     const_cast<Network&>(net_).swapDurations(sim_._visitor._realizedRates);
   }
+  BOOST_FOREACH(OrderedTaskSetMap<double>::value_type& kv, criticalPathDistro_)
+  {
+    kv.second /= nruns_;
+  }
 }
 
 template <class Policy>
-void interdictionProbs(const Network& net_, size_t budget_, const Policy& policy_ , size_t nruns_, bool verbose_)
+void interdictionProbsImpl(const Network& net_, size_t budget_, const Policy& policy_ , size_t nruns_, bool verbose_)
 {
   std::cout << "Performing the experiment" << std::endl; 
 
   std::vector<size_t> icounts(net_.size(), 0);
   std::vector<size_t> critcounts(net_.size(), 0);
+  std::vector<size_t> critAndInterdictedCounts(net_.size(), 0);
+  OrderedTaskSetMap<double>::type criticalPathDistro;
   InterdictionSamplingStateVisitor isv(net_);
   if(verbose_)
   {
     Simulation<Policy, InterdictionSamplingStateVisitor, false, true> sim(net_, policy_, isv);
-    runSimulations(net_, budget_, policy_, sim, nruns_, icounts, critcounts);
+    runSimulations(net_, budget_, policy_, sim, nruns_, icounts, critcounts, criticalPathDistro, critAndInterdictedCounts);
   }
   else
   {
     Simulation<Policy, InterdictionSamplingStateVisitor> sim(net_, policy_, isv);
-    runSimulations(net_, budget_, policy_, sim, nruns_, icounts, critcounts);
+    runSimulations(net_, budget_, policy_, sim, nruns_, icounts, critcounts, criticalPathDistro, critAndInterdictedCounts);
   }
   for(size_t i = 0; i < icounts.size(); ++i)
   {
@@ -124,20 +146,49 @@ void interdictionProbs(const Network& net_, size_t budget_, const Policy& policy
     double prob = double(critcounts[i]) / double(nruns_); 
     std::cout << "Criticality index [" <<  i << "] = [" << prob << "]" << std::endl; 
   }
+
+  std::cout << std::endl << "\nPrinting the conditional probabilities now\n" << std::endl;
+  for(size_t i = 0; i < critAndInterdictedCounts.size(); ++i)
+  {
+    double prob = double(critAndInterdictedCounts[i]) / double(icounts[i]); 
+    std::cout << "Conditional critical probability: index [" <<  i << "] = [" << prob << "] because out of the [" << icounts[i] << "] times that it was interdicted "
+        << " it was also on the critical path [" << critAndInterdictedCounts[i] << "] times "<< std::endl; 
+  }
+
+  BOOST_FOREACH(const OrderedTaskSetMap<double>::value_type& kv, criticalPathDistro)
+  {
+    std::cout << "CPP of [";
+    std::copy(kv.first.begin(), kv.first.end(), std::ostream_iterator<vertex_t>(std::cout, " "));
+    std::cout << "] = " << kv.second << std::endl; 
+  }
 }
 
 void interdictionProbs(const Network& net_, size_t budget_, const std::string& pfile_, size_t nruns_, bool verbose_)
 {
   PersistedPolicy ppol(pfile_.c_str(), net_);
-  interdictionProbs(net_, budget_, ppol, nruns_, verbose_);
+  interdictionProbsImpl(net_, budget_, ppol, nruns_, verbose_);
 }
 
-void interdictionProbs(const Network& net_, size_t budget_, size_t nruns_, bool verbose_)
+void interdictionProbs(const Network& net_, size_t budget_, size_t nruns_, bool verbose_, bool deterministic_ = false)
 {
   double optimalValue;
-  DynamicPolicy optimalPolicy;
-  DynamicAlgorithm<StandardEvaluator>().optimalPolicyAndValue(net_, budget_, optimalPolicy, optimalValue);
-  interdictionProbs(net_, budget_, optimalPolicy, nruns_, verbose_);
+  if(deterministic_)
+  {
+    StaticPolicy sp;
+    deterministicPolicy(net_, budget_, sp);
+    interdictionProbsImpl(net_, budget_, sp, nruns_, verbose_);
+  }
+  else if(budget_ > 0)
+  {
+    DynamicPolicy optimalPolicy;
+    DynamicAlgorithm<StandardEvaluator>().optimalPolicyAndValue(net_, budget_, optimalPolicy, optimalValue);
+    interdictionProbsImpl(net_, budget_, optimalPolicy, nruns_, verbose_);
+  }
+  else
+  {
+    // use an empty static policy is the same thing
+    interdictionProbsImpl(net_, budget_, StaticPolicy(), nruns_, verbose_);
+  }
 }
 
 int main(int ac_, char** av_)
@@ -157,6 +208,7 @@ int main(int ac_, char** av_)
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
     ("policy-file,P",po::value<std::string>(), "Persistence file to read from")
     ("verbose,V","Should print detailed info?")
+    ("determ","Should use deterministic algo?")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
 
   po::variables_map vm;
@@ -210,11 +262,9 @@ int main(int ac_, char** av_)
   std::cout << "There are " << boost::num_edges(n.graph()) << " edges" << std::endl;
   std::cout << "There are " << boost::num_vertices(n.graph()) << " vertices" << std::endl;
 
-  
-  double value = 0;
   if(!vm.count("policy-file"))
   {
-    interdictionProbs(n, budget, nruns, vm.count("verbose"));
+    interdictionProbs(n, budget, nruns, vm.count("verbose"), vm.count("determ") != 0);
     return 0;
   }
 

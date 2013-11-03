@@ -61,6 +61,13 @@ namespace ig { namespace core {
 
   typedef boost::unordered_set<TaskSet, TaskSetHash<TaskSet> > TaskSets;
   
+  template <class T>
+  struct OrderedTaskSetMap 
+  {
+    typedef boost::unordered_map<OrderedTaskSet, T, TaskSetHash<OrderedTaskSet> > type;
+    typedef typename type::value_type value_type;
+  };
+
   typedef std::vector<vertex_t> TaskList; 
 }}
 
