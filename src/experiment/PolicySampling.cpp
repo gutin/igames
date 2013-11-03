@@ -148,12 +148,18 @@ void interdictionProbsImpl(const Network& net_, size_t budget_, const Policy& po
   }
 
   std::cout << std::endl << "\nPrinting the conditional probabilities now\n" << std::endl;
+  size_t totalCritical = 0;
   for(size_t i = 0; i < critAndInterdictedCounts.size(); ++i)
   {
-    double prob = double(critAndInterdictedCounts[i]) / double(icounts[i]); 
-    std::cout << "Conditional critical probability: index [" <<  i << "] = [" << prob << "] because out of the [" << icounts[i] << "] times that it was interdicted "
+    if(icounts[i])
+    {
+      double prob = double(critAndInterdictedCounts[i]) / double(icounts[i]); 
+      std::cout << "Conditional critical probability: index [" <<  i << "] = [" << prob << "] because out of the [" << icounts[i] << "] times that it was interdicted "
         << " it was also on the critical path [" << critAndInterdictedCounts[i] << "] times "<< std::endl; 
+      totalCritical += critAndInterdictedCounts[i];
+    }
   }
+  std::cout << "\nThe average conditional probability of being on critical path is [" << (double(totalCritical)/double(budget_*nruns_)) << "]\n" << std::endl;
 
   BOOST_FOREACH(const OrderedTaskSetMap<double>::value_type& kv, criticalPathDistro)
   {
