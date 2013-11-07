@@ -1,5 +1,6 @@
 #include "Network.hpp"
 
+#include <boost/graph/transitive_closure.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/uniform_real.hpp>
 #include <boost/random/mersenne_twister.hpp>
@@ -170,6 +171,7 @@ bool Network::import(const std::string& file_, bool delaysFromFile_)
     const_cast<Task&>(_g[*vi])._crashingCost = crashingCostGenerator();
     std::cout << "Task " << *vi << " has a unit crashing cost of " << _g[*vi]._crashingCost << std::endl;
   }
+  std::cout << "Network order strength is [" << orderStrength() << "]" << std::endl;
   return true;
 }
 
@@ -186,8 +188,30 @@ vertex_i Network::findFromIndex(int i_) const
 
 double Network::orderStrength() const
 {
-  //TODO: implement this
-  return 0.8;
+  DirectedGraph tcg;
+  boost::transitive_closure(graph(), tcg);
+  size_t n = size() - 2;
+  vertex_i vi, vj, vi_end;
+  size_t cedges = 0;
+  for(boost::tie(vi, vi_end) = boost::vertices(_g); vi != vi_end; ++vi)
+  {
+    if(*vi == start() || *vi == end())
+    {
+      continue;
+    }
+    for(vj = vi; vj != vi_end; ++vj)
+    {
+      if(*vj == start() || *vj == end())
+      {
+        continue;
+      }
+      if(boost::edge(*vi, *vj, tcg).second)
+      {
+        ++cedges;
+      }
+    }
+  }
+  return double(cedges) / double(n * (n - 1) / 2);
 }
 
 void Network::swapDurations(std::vector<double>& durations_)

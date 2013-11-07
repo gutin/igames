@@ -68,6 +68,10 @@ BOOST_AUTO_TEST_SUITE( standardAlgorithm )
     Network n;
     n.import("../samples/10-OS-0.8/Pat11.rcp");
     BOOST_CHECK_CLOSE(0.8, n.orderStrength(), 1e-06);
+
+    Network n2;
+    n2.import("../samples/10-OS-0.2/Pat11.rcp");
+    BOOST_CHECK_CLOSE(0.2, n2.orderStrength(), 1e-06);
   }
 BOOST_AUTO_TEST_SUITE_END()
   

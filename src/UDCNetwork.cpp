@@ -68,7 +68,7 @@ UDCNetwork::UDCNetwork(const Network& net_)
       }
     }
   }
-  cout << "Constructed UDC network" << endl;
+  cout << "Constructed UDC network. Max parallel is [" << _maxParallel << "]" << endl;
 }
 
 void UDCNetwork::findUDCs(const DirectedGraph& n_, TaskSets& udcs_)
@@ -254,7 +254,6 @@ void UDCNetwork::sortedUDCs(UDCPtrs& ptrs_) const
   boost::tie(uvi, uvi_end) = boost::vertices(_ug);
   for(;uvi != uvi_end; ++uvi)
   {
-    cout << "pushing back " << *uvi << endl;
     ptrs_.push_back(uvi);      
   }
   std::sort(ptrs_.begin(), ptrs_.end(), UDCSortComparison(*this));
