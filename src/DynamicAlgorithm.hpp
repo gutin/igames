@@ -249,6 +249,9 @@ size_t DynamicAlgorithm<T>::solveUDC(vertex_i uPtr_,
       size_t maxActiveCode = (1L << s._active.size()) - 1;
       for(int activeCombo = maxActiveCode; (activeCombo + 1) >= 1; --activeCombo)
       {
+        if(s._active.size() - util::numBitsSet(activeCombo) > budget_ - y)
+          continue;
+
         size_t realActiveCode = 0;
         OrderedTaskSet active;
         size_t lastActive = 0;
@@ -269,7 +272,7 @@ size_t DynamicAlgorithm<T>::solveUDC(vertex_i uPtr_,
         std::set_difference(s._active.begin(), s._active.end(),
                             active.begin(), active.end(),
                             std::inserter(s._interdicted, s._interdicted.begin()));
-         
+
         stateCount++;
 
         size_t tau = (1L << 2 * N)  * (budget_ - y);

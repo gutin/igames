@@ -250,6 +250,8 @@ size_t FastEvaluator<PT,SE>::solveUDC(vertex_i uPtr_,
       size_t maxActiveCode = (1L << s._active.size()) - 1;
       for(int activeCombo = maxActiveCode; (activeCombo + 1) >= 1; --activeCombo)
       {
+        if(s._active.size() - util::numBitsSet(activeCombo) > budget_ - y)
+          continue;
         size_t realActiveCode = 0;
         OrderedTaskSet active;
         size_t lastActive = 0;
