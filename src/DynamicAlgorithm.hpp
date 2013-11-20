@@ -437,6 +437,22 @@ double StandardEvaluator::evaluate(const UDC& udc_,
     return value;
   }
 
+  if(!candidate_->empty())
+  {
+    // if action is non-empty then we can already lookup the correct value in the UDC lookup table
+    const size_t currentTau = tau(udc_, state_, budget_);
+    size_t nextTau = currentTau;
+
+    BOOST_FOREACH(vertex_t t, *candidate_)
+    {
+      nextTau &= ~(1L << udc_._activity2UDCIndex[t]);
+    }
+    nextTau ^= (1L << (2*udc_.size())) * (budget_ - state_._res);
+    nextTau |= (1L << (2*udc_.size())) * (budget_ - state_._res + candidate_->size());
+
+    return udc_.value(nextTau);
+  }
+
   BOOST_FOREACH(vertex_t u, state_._active)
   {
     double nextVal = 0;
@@ -454,13 +470,6 @@ double StandardEvaluator::evaluate(const UDC& udc_,
       size_t tmp = (~0) - ((1L << stUDC._tasks.size()) - 1L) + st._activationCode;
       tav |= ~(tmp);
 
-      BOOST_FOREACH(vertex_t t, *candidate_)
-      {
-        if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
-        {
-          tav &= ~(1L << stUDC._activity2UDCIndex[t]);
-        }
-      }
       BOOST_FOREACH(vertex_t t, state_._interdicted)
       {
         if(stUDC._taskSet.find(t) != stUDC._taskSet.end())
