@@ -3,7 +3,6 @@
 
 #include "Task.hpp"
 #include "DynamicAlgorithm.hpp"
-#include "PersistedPolicy.hpp"
 #include "Extensions.hpp"
 
 #include <boost/program_options.hpp>
@@ -22,6 +21,7 @@ namespace
   const char* ORDER_STRENGTH_ARG_NAME = "os";
   const char* RCPBASE_ARG_NAME = "rcp-base";
   const char* RCPFILE_ARG_NAME = "rcp-file";
+  const char* COMPLEXITY_ARG_NAME = "complexity";
 
   const char* DESCRIPTION = "Interdiction game solver";
 }
@@ -42,7 +42,7 @@ int main(int ac_, char** av_)
     ("impunc", "Version with implementation uncertainty?")
     ("crash", "Version with crashing?")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
-    ("persist,P",po::value<std::string>(), "Persist to the given file")
+    (COMPLEXITY_ARG_NAME, "Print complexity?")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
 
   po::variables_map vm;
@@ -97,6 +97,17 @@ int main(int ac_, char** av_)
   std::cout << "There are " << boost::num_edges(n.graph()) << " edges" << std::endl;
   std::cout << "There are " << boost::num_vertices(n.graph()) << " vertices" << std::endl;
 
+  if(vm.count(COMPLEXITY_ARG_NAME))
+  {
+    UDCNetwork unet(n);
+    std::map<size_t,size_t> chm;
+    std::cout << "Complexity is [" << unet.complexity(budget, chm) << "]" << std::endl;
+    BOOST_FOREACH(UDCNetwork::ComplexityHeatMap::value_type& kv, chm)
+    {
+      std::cout << "For complexity " << kv.first << " = " << kv.second << std::endl;
+    }
+    return 0;
+  }
   
   double value = 0;
   if(vm.count("crash"))
@@ -106,13 +117,6 @@ int main(int ac_, char** av_)
   else if(vm.count("impunc"))
   {
     value = DynamicAlgorithm<ImplementationUncertaintyEvaluator>().optimalValue(n, budget);
-  }
-  else if(vm.count("persist"))
-  {
-    std::string file = vm["persist"].as<std::string>();
-    std::cout << "Persisting policy to file: " << file.c_str() << std::endl;
-    PersistantStoragePolicy psp(file, n);
-    value = DynamicAlgorithm<StandardEvaluator>().execute(n, budget, psp); 
   }
   else
   {

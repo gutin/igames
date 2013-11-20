@@ -40,7 +40,6 @@ EXP_BIN = $(INSTALL_DIR)/psample
 LIB_SRCS = Network.cpp \
           UDCNetwork.cpp \
           State.cpp \
-          PersistedPolicy.cpp \
           Extensions.cpp \
           Utils.cpp
 
@@ -50,7 +49,6 @@ LIB_HEADERS = DynamicAlgorithm.hpp \
 							Utils.hpp \
 							Network.hpp \
 							UDCNetwork.hpp \
-							PersistedPolicy.hpp \
 							Extensions.hpp \
 							CommonTypes.hpp
 

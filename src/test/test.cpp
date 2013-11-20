@@ -4,7 +4,6 @@
 
 #include <Network.hpp>
 #include <UDCNetwork.hpp>
-#include <PersistedPolicy.hpp>
 #include <DynamicAlgorithm.hpp>
 #include <DynamicEvaluator.hpp>
 #include <StaticAlgorithms.hpp>
@@ -152,27 +151,7 @@ BOOST_AUTO_TEST_SUITE( staticStochasticAlgorithm )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// Testing the persisted policy
-BOOST_AUTO_TEST_SUITE( persistedPolicy )
-
-  // Make sure the optimal value and the value of 
-  // the optimal policy worked out are equal
-  BOOST_AUTO_TEST_CASE( objectValueMustMatchEvaluated )
-  {
-    const int B = 3;
-    Network n;
-    n.import("../samples/10-OS-0.8/Pat12.rcp");
-    
-    double optValue = 0;
-    {
-      PersistantStoragePolicy psp("bla.policy", n);
-      optValue = DynamicAlgorithm<StandardEvaluator>().execute(n, B, psp);
-    }
-    PersistedPolicy ppol("bla.policy", n);
-    double workedOutVal = StandardDynamicEvaluator().evaluate(n, B, ppol);
-
-    BOOST_CHECK_CLOSE(optValue, workedOutVal, 1e-05);
-  }
+BOOST_AUTO_TEST_SUITE( simulations )
 
   BOOST_AUTO_TEST_CASE(testSimulationAccurary)
   {

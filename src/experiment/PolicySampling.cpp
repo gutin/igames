@@ -2,7 +2,6 @@
 #include "Simulation.hpp"
 
 #include "Task.hpp"
-#include "PersistedPolicy.hpp"
 #include "DynamicEvaluator.hpp"
 #include "StaticAlgorithms.hpp"
 
@@ -169,12 +168,6 @@ void interdictionProbsImpl(const Network& net_, size_t budget_, const Policy& po
   }
 }
 
-void interdictionProbs(const Network& net_, size_t budget_, const std::string& pfile_, size_t nruns_, bool verbose_)
-{
-  PersistedPolicy ppol(pfile_.c_str(), net_);
-  interdictionProbsImpl(net_, budget_, ppol, nruns_, verbose_);
-}
-
 void interdictionProbs(const Network& net_, size_t budget_, size_t nruns_, bool verbose_, bool deterministic_ = false)
 {
   double optimalValue;
@@ -212,7 +205,6 @@ int main(int ac_, char** av_)
     (ORDER_STRENGTH_ARG_NAME, po::value<double>(), "Order strength")
     (RCPBASE_ARG_NAME, po::value<std::string>(), "Base directory with .rcp files")
     ("delays-from-file,D", "Should delayed durations be taken from the .rcp file?")
-    ("policy-file,P",po::value<std::string>(), "Persistence file to read from")
     ("verbose,V","Should print detailed info?")
     ("determ","Should use deterministic algo?")
     (RCPFILE_ARG_NAME, po::value<std::string>(), "Direct .rcp file to use");
@@ -268,13 +260,6 @@ int main(int ac_, char** av_)
   std::cout << "There are " << boost::num_edges(n.graph()) << " edges" << std::endl;
   std::cout << "There are " << boost::num_vertices(n.graph()) << " vertices" << std::endl;
 
-  if(!vm.count("policy-file"))
-  {
-    interdictionProbs(n, budget, nruns, vm.count("verbose"), vm.count("determ") != 0);
-    return 0;
-  }
-
-  std::string pfile = vm["policy-file"].as<std::string>();
-  interdictionProbs(n, budget, pfile, nruns, vm.count("verbose"));
+  interdictionProbs(n, budget, nruns, vm.count("verbose"), vm.count("determ") != 0);
   return 0;
 }
